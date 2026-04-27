@@ -1,7 +1,18 @@
 import { NavLink } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 
-export default function Sidebar({ tabs }) {
+type SidebarTab = {
+    to: string;
+    label: string;
+    description: string;
+    icon: string;
+};
+
+type SidebarProps = {
+    tabs: readonly SidebarTab[];
+};
+
+export default function Sidebar({ tabs }: SidebarProps) {
     return (
         <aside className={styles.sidebar}>
             <div className={styles.brand}>

@@ -84,6 +84,7 @@ export type AIRecommendationResponse = {
     };
     providers: {
         parser: string;
+        ranking: string;
         explanations: string;
     };
     retrieval: {
@@ -112,6 +113,11 @@ export type AIRecommendationResponse = {
                 lyrics: string[];
             };
         }>;
+    };
+    guardrail?: {
+        triggered: boolean;
+        category: string;
+        message: string;
     };
     overall_explanation: string;
     results: RecommendationResult[];

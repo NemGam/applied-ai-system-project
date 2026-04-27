@@ -7,31 +7,18 @@ type RequestBuilderProps = {
     preferences: Preferences;
     isLoading: boolean;
     savedTasteProfile: ManualPreferencesPayload;
+    error: string;
     onPreferenceChange: <K extends keyof Preferences>(field: K, value: Preferences[K]) => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
-function summarizeTasteProfile(profile: ManualPreferencesPayload): string[] {
-    const items: string[] = [];
-    if (profile.genre) items.push(`genre ${profile.genre}`);
-    if (profile.mood) items.push(`mood ${profile.mood}`);
-    if (profile.listening_context) items.push(`context ${profile.listening_context}`);
-    if (profile.preferred_mood_tags.length) items.push(`tags ${profile.preferred_mood_tags.join(', ')}`);
-    if (profile.energy !== undefined) items.push(`energy ${profile.energy.toFixed(2)}`);
-    if (profile.acousticness !== undefined) items.push(`acousticness ${profile.acousticness.toFixed(2)}`);
-    if (profile.vocal_presence !== undefined) items.push(`vocal ${profile.vocal_presence.toFixed(2)}`);
-    if (profile.tempo_bpm !== undefined) items.push(`tempo ${profile.tempo_bpm}`);
-    return items;
-}
-
 export default function RequestBuilder({
     preferences,
     isLoading,
-    savedTasteProfile,
+    error,
     onPreferenceChange,
     onSubmit,
 }: RequestBuilderProps) {
-    const tasteProfileSummary = summarizeTasteProfile(savedTasteProfile);
 
     return (
         <section className="panel preferences-panel">
@@ -55,8 +42,10 @@ export default function RequestBuilder({
                     <p className="helper-text">
                         The backend parses this into structured preferences before retrieval and scoring.
                     </p>
+                    {error ? <p className="status error">{error}</p> : null}
                     <label className="helper-text" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <input
+                            style={{flex: 0}}
                             type="checkbox"
                             checked={preferences.useTasteProfile}
                             onChange={(event) =>
@@ -69,7 +58,7 @@ export default function RequestBuilder({
 
                 <div className="form-footer">
                     <PreferenceInput
-                        label="Top K"
+                        label="Top K songs"
                         type="number"
                         min="1"
                         max="20"

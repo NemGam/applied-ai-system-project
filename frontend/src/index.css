@@ -97,6 +97,35 @@ textarea {
     min-height: 0;
 }
 
+.home-layout {
+    transition: grid-template-columns 280ms ease;
+}
+
+.home-layout--results {
+    grid-template-columns: 0 minmax(0, 1fr);
+}
+
+.request-builder-wrap {
+    min-width: 0;
+    opacity: 1;
+    transform: translateX(0);
+    transition:
+        opacity 220ms ease,
+        transform 220ms ease,
+        visibility 0s linear 0s;
+}
+
+.request-builder-wrap--hidden {
+    opacity: 0;
+    transform: translateX(-24px);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        opacity 220ms ease,
+        transform 220ms ease,
+        visibility 0s linear 220ms;
+}
+
 .panel {
     background: rgba(9, 12, 18, 0.76);
     border: 1px solid rgba(247, 178, 103, 0.18);
@@ -253,6 +282,28 @@ button:disabled {
     min-height: 0;
 }
 
+.home-results {
+    opacity: 0;
+    transform: translateY(18px);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        opacity 260ms ease 120ms,
+        transform 260ms ease 120ms,
+        visibility 0s linear 380ms;
+}
+
+.home-results--visible {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+        opacity 260ms ease 120ms,
+        transform 260ms ease 120ms,
+        visibility 0s linear 0s;
+}
+
 .results-panel {
     display: flex;
     flex-direction: column;
@@ -342,6 +393,7 @@ button:disabled {
     .profile-layout {
         grid-template-columns: 1fr;
     }
+
 }
 
 @media (max-width: 720px) {

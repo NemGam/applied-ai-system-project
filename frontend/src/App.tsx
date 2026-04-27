@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react';
-import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import type {
@@ -123,6 +123,8 @@ export default function App() {
         event.preventDefault();
         setIsLoading(true);
         setError('');
+        setResults(null);
+        setSelectedSong(null);
 
         try {
             const response = await fetch(`${API_BASE_URL}/recommendations/ai`, {
@@ -141,6 +143,10 @@ export default function App() {
             }
 
             const data: AIRecommendationResponse = await response.json();
+            if (data.guardrail?.triggered) {
+                setError(data.guardrail.message || 'That request is outside the supported music scope.');
+                return;
+            }
             setResults(data);
             setSelectedSong(data.results[0]?.song ?? null);
         } catch (submissionError) {
@@ -149,8 +155,6 @@ export default function App() {
                     ? submissionError.message
                     : 'Unexpected request error';
             setError(message);
-            setResults(null);
-            setSelectedSong(null);
         } finally {
             setIsLoading(false);
         }
@@ -169,13 +173,11 @@ export default function App() {
                                 hero={APP_TABS[0]}
                                 preferences={preferences}
                                 isLoading={isLoading}
-                                requestPreview={requestPreview}
                                 savedTasteProfile={manualPreferences}
                                 results={results}
                                 selectedSong={selectedSong}
                                 error={error}
                                 onPreferenceChange={updatePreference}
-                                onReset={resetPreferences}
                                 onSubmit={handleSubmit}
                                 onSongSelect={setSelectedSong}
                             />
