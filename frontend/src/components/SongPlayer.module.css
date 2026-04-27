@@ -1,0 +1,83 @@
+.songPlayerPanel {
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.songCover {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.coverPlaceholder {
+    display: grid;
+    place-items: center;
+    color: #beb8ad;
+}
+
+.title {
+    margin: 0;
+    line-height: 1.2;
+}
+
+.artist {
+    margin: 0;
+    color: #d8d2c7;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1fr;
+    gap: 8px;
+    margin-top: 30px;
+}
+
+.playButton,
+.skipButton {
+    border: 0;
+    border-radius: 999px;
+    color: #1a1a1a;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.playButton {
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #f7b267 0%, #f4845f 100%);
+}
+
+.skipButton {
+    padding: 10px 12px;
+    background: rgba(247, 178, 103, 0.25);
+    color: #f5f1e8;
+    border: 1px solid rgba(247, 178, 103, 0.45);
+}
+
+.playButton:disabled,
+.skipButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.timelineWrap {
+    display: grid;
+    gap: 4px;
+}
+
+.timeline {
+    width: 100%;
+    margin: 0;
+    accent-color: #f7b267;
+}
+
+.timeLabels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: #beb8ad;
+}

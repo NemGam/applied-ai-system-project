@@ -1,0 +1,116 @@
+.resultsStack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+    flex: 1;
+}
+
+.summaryCard,
+.preferenceCard {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.summaryLabel {
+    display: inline-block;
+    margin-bottom: 10px;
+    color: #f7b267;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.summaryText,
+.overallExplanation {
+    margin: 0;
+    color: #ece6db;
+}
+
+.overallExplanation {
+    margin-top: 14px;
+}
+
+.summaryMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    color: #d8d2c7;
+    font-size: 0.92rem;
+}
+
+.summaryMeta span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(247, 178, 103, 0.08);
+    border: 1px solid rgba(247, 178, 103, 0.18);
+}
+
+.preferenceGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.preferenceItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(12, 17, 25, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.preferenceName {
+    color: #beb8ad;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.resultsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.listSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sectionHeader h3 {
+    margin: 0;
+}
+
+.sectionHeader span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(247, 178, 103, 0.08);
+    border: 1px solid rgba(247, 178, 103, 0.18);
+    color: #f7d3a9;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.sectionText {
+    margin: 0;
+    color: #d8d2c7;
+}

@@ -1,0 +1,154 @@
+.songCard {
+    display: grid;
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 18px;
+    border-radius: 20px;
+    padding: 18px;
+    background:
+        linear-gradient(180deg, rgba(247, 178, 103, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%),
+        rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.songCardSelectable {
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.songCardSelectable:hover,
+.songCardSelectable:focus-visible {
+    transform: translateY(-2px);
+    border-color: rgba(247, 178, 103, 0.45);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+}
+
+.songCover {
+    width: 108px;
+    height: 108px;
+    object-fit: cover;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.songCoverPlaceholder {
+    display: grid;
+    place-items: center;
+    color: #beb8ad;
+}
+
+.songBody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.songHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.songHeader h3,
+.artist,
+.explanation {
+    margin: 0;
+}
+
+.artist {
+    color: #d8d2c7;
+}
+
+.scoreBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 88px;
+}
+
+.scoreBlock strong {
+    font-size: 1.4rem;
+    color: #f7b267;
+}
+
+.scoreBlock span {
+    color: #beb8ad;
+    font-size: 0.82rem;
+}
+
+.songFacts,
+.sourceSummary,
+.reasonList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.songFacts span,
+.reasonPill {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.84rem;
+}
+
+.songFacts span {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #ece6db;
+}
+
+.explanation {
+    color: #f4efe4;
+}
+
+.reasonPill {
+    background: rgba(247, 178, 103, 0.1);
+    border: 1px solid rgba(247, 178, 103, 0.16);
+    color: #f7d3a9;
+}
+
+.sourceSummary span,
+.sourcePill,
+.sourceReasonPill {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+}
+
+.sourceSummary span {
+    background: rgba(168, 208, 230, 0.08);
+    border: 1px solid rgba(168, 208, 230, 0.14);
+    color: #d6edf8;
+}
+
+.sourcePill {
+    background: rgba(128, 222, 178, 0.10);
+    border: 1px solid rgba(128, 222, 178, 0.18);
+    color: #c9f0dc;
+}
+
+.sourceReasonPill {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #ded8ce;
+}
+
+@media (max-width: 720px) {
+    .songCard {
+        grid-template-columns: 1fr;
+    }
+
+    .songCover {
+        width: 100%;
+        height: 220px;
+    }
+
+    .songHeader {
+        flex-direction: column;
+    }
+
+    .scoreBlock {
+        align-items: flex-start;
+    }
+}
