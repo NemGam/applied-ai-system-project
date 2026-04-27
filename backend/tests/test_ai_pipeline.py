@@ -185,6 +185,8 @@ def test_lyrics_retrieval_finds_song_from_lyric_language():
     assert retrieved[0]["retrieval_breakdown"]["lyrics"] > 0
     assert retrieved[0]["matched_sources"] == ["lyrics"]
     assert any("lyric" in reason for reason in retrieved[0]["source_reasons"]["lyrics"])
+    assert retrieved[0]["lyric_snippets"]
+    assert any("midnight coding" in snippet.lower() for snippet in retrieved[0]["lyric_snippets"])
 
 
 def test_merged_retrieval_can_report_both_sources_for_same_song():
@@ -210,6 +212,7 @@ def test_merged_retrieval_can_report_both_sources_for_same_song():
     assert "lyrics" in midnight_coding["matched_sources"]
     assert midnight_coding["retrieval_breakdown"]["metadata"] > 0
     assert midnight_coding["retrieval_breakdown"]["lyrics"] > 0
+    assert midnight_coding["lyric_snippets"]
 
 
 def test_gemini_explanations_are_disabled_by_default(monkeypatch):
@@ -308,14 +311,20 @@ def test_rerank_recommendations_with_gemini_reorders_top_slice(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     monkeypatch.setenv("GEMINI_RERANKING_ENABLED", "true")
     monkeypatch.setenv("GEMINI_RERANK_TOP_N", "2")
-    monkeypatch.setattr(
-        "backend.src.ai_pipeline._post_to_gemini",
-        lambda prompt, temperature=0.1: {
+    captured_prompt: dict[str, str] = {}
+
+    def fake_post(prompt, temperature=0.1):
+        captured_prompt["value"] = prompt
+        return {
             "ranking": [
                 {"id": 2, "rank": 1},
                 {"id": 1, "rank": 2},
             ]
-        },
+        }
+
+    monkeypatch.setattr(
+        "backend.src.ai_pipeline._post_to_gemini",
+        fake_post,
     )
 
     ranked_songs = [
@@ -328,10 +337,16 @@ def test_rerank_recommendations_with_gemini_reorders_top_slice(monkeypatch):
         user_request="focused study music",
         user_prefs={"favorite_moods": ["focused"], "favorite_contexts": ["study"]},
         ranked_songs=ranked_songs,
+        retrieval_context_by_song_id={
+            1: {"lyric_snippets": ["Soft lamps and notebook glow"]},
+            2: {"lyric_snippets": ["Midnight coding in a low-lit flow"]},
+        },
     )
 
     assert provider == "gemini"
     assert [song["id"] for song, _, _ in reranked] == [2, 1, 3]
+    assert "lyric_snippets" in captured_prompt["value"]
+    assert "Midnight coding in a low-lit flow" in captured_prompt["value"]
 
 
 def test_rerank_recommendations_with_gemini_falls_back_when_response_incomplete(monkeypatch):
@@ -355,6 +370,63 @@ def test_rerank_recommendations_with_gemini_falls_back_when_response_incomplete(
 
     assert provider == "deterministic"
     assert reranked == ranked_songs
+
+
+def test_explain_ranked_songs_with_gemini_includes_lyric_snippets_in_prompt(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_EXPLANATIONS_ENABLED", "true")
+    monkeypatch.setattr("backend.src.ai_pipeline.wait_for_explanation_rate_limit", lambda _: None)
+    captured_prompt: dict[str, str] = {}
+
+    def fake_post(prompt, temperature=0.2):
+        captured_prompt["value"] = prompt
+        return {
+            "overall_explanation": "Grounded in the retrieved lyrics.",
+            "song_explanations": [
+                {"id": 2, "explanation": "The lyric imagery fits the late-night study request."}
+            ],
+        }
+
+    monkeypatch.setattr("backend.src.ai_pipeline._post_to_gemini", fake_post)
+
+    overall, explanations, provider = explain_ranked_songs(
+        user_request="focused study music",
+        user_prefs={"favorite_moods": ["focused"], "favorite_contexts": ["study"]},
+        ranked_songs=[
+            (
+                {
+                    "id": 2,
+                    "title": "Midnight Coding",
+                    "artist": "Test Artist",
+                    "genre": "lofi",
+                    "mood": "focused",
+                    "listening_context": "study",
+                    "energy": 0.31,
+                    "danceability": 0.42,
+                    "acousticness": 0.79,
+                    "tempo_bpm": 82,
+                    "vocal_presence": 0.28,
+                    "detailed_mood_tags": "nocturnal;steady",
+                },
+                0.94,
+                "math explanation",
+            )
+        ],
+        retrieval_context_by_song_id={
+            2: {
+                "lyric_snippets": [
+                    "Midnight coding in a low-lit flow",
+                    "Coffee rings and neon afterglow",
+                ]
+            }
+        },
+    )
+
+    assert provider == "gemini"
+    assert overall == "Grounded in the retrieved lyrics."
+    assert explanations[2] == "The lyric imagery fits the late-night study request."
+    assert "lyric_snippets" in captured_prompt["value"]
+    assert "Coffee rings and neon afterglow" in captured_prompt["value"]
 
 
 def test_cached_gemini_response_retries_once_after_429(monkeypatch):

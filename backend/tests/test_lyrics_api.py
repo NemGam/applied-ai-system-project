@@ -74,6 +74,8 @@ def test_ai_recommendations_include_multi_source_retrieval_fields():
     assert 'retrieval_breakdown' in first_result
     assert 'matched_sources' in first_result
     assert 'source_reasons' in first_result
+    assert 'lyric_snippets' in first_result
+    assert 'lyric_snippets' in response['retrieval']['candidates'][0]
 
 
 def test_ai_recommendations_can_apply_taste_profile_to_natural_language_mode():

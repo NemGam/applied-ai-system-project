@@ -1,14 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './SongPlayer.module.css';
+import type { Song } from '../types';
 
 type SongPlayerProps = {
-    song: {
-        id: number;
-        title: string;
-        artist: string;
-        cover_url: string | null;
-        audio_url: string | null;
-    };
+    song: Song;
 };
 
 export default function SongPlayer({ song }: SongPlayerProps) {
@@ -16,12 +11,71 @@ export default function SongPlayer({ song }: SongPlayerProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [lyrics, setLyrics] = useState<string | null>(null);
+    const [isLyricsLoading, setIsLyricsLoading] = useState(false);
+    const [lyricsError, setLyricsError] = useState('');
 
     useEffect(() => {
         setIsPlaying(false);
         setCurrentTime(0);
         setDuration(0);
     }, [song.id, song.audio_url]);
+
+    useEffect(() => {
+        if (!song.has_lyrics || !song.lyrics_url) {
+            setLyrics(null);
+            setLyricsError('');
+            setIsLyricsLoading(false);
+            return;
+        }
+
+        const abortController = new AbortController();
+
+        async function loadLyrics() {
+            setIsLyricsLoading(true);
+            setLyrics(null);
+            setLyricsError('');
+
+            try {
+                const response = await fetch(song.lyrics_url as string, {
+                    signal: abortController.signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Lyrics request failed with status ${response.status}`);
+                }
+
+                const payload = (await response.json()) as { lyrics?: string };
+                const nextLyrics = payload.lyrics?.trim() ?? '';
+                if (!nextLyrics) {
+                    setLyricsError('Lyrics are unavailable right now.');
+                    setLyrics(null);
+                    return;
+                }
+
+                setLyrics(nextLyrics);
+            } catch (error) {
+                if (abortController.signal.aborted) {
+                    return;
+                }
+
+                setLyrics(null);
+                setLyricsError(
+                    error instanceof Error ? error.message : 'Lyrics are unavailable right now.',
+                );
+            } finally {
+                if (!abortController.signal.aborted) {
+                    setIsLyricsLoading(false);
+                }
+            }
+        }
+
+        void loadLyrics();
+
+        return () => {
+            abortController.abort();
+        };
+    }, [song.has_lyrics, song.id, song.lyrics_url]);
 
     async function togglePlayback() {
         if (!song.audio_url) {
@@ -134,6 +188,19 @@ export default function SongPlayer({ song }: SongPlayerProps) {
                     +5s
                 </button>
             </div>
+
+            {song.has_lyrics ? (
+                <section className={styles.lyricsSection} aria-live="polite">
+                    <h4 className={styles.lyricsHeading}>Lyrics</h4>
+                    {isLyricsLoading ? (
+                        <p className={styles.lyricsStatus}>Loading lyrics...</p>
+                    ) : lyricsError ? (
+                        <p className={styles.lyricsStatus}>{lyricsError}</p>
+                    ) : lyrics ? (
+                        <pre className={styles.lyricsText}>{lyrics}</pre>
+                    ) : null}
+                </section>
+            ) : null}
 
             {song.audio_url ? (
                 <audio

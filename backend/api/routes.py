@@ -348,19 +348,6 @@ def create_ai_recommendations(payload: AIRecommendationRequest, request: Request
         lyrics_by_song_id=lyrics_by_song_id,
         limit=payload.retrieval_k,
     )
-    candidate_songs = [candidate["song"] for candidate in retrieved_candidates]
-    ranked = recommend_songs(user_prefs=recommender_prefs, songs=candidate_songs, k=payload.k)
-    ranked, ranking_provider = rerank_recommendations_with_gemini(
-        user_request=request_summary,
-        user_prefs=recommender_prefs,
-        ranked_songs=ranked,
-    )
-    overall_explanation, llm_explanations, explanation_provider = explain_ranked_songs(
-        user_request=request_summary,
-        user_prefs=recommender_prefs,
-        ranked_songs=ranked,
-    )
-
     retrieval_scores_by_id = {
         int(candidate["song"].get("id", -1)): candidate["retrieval_score"]
         for candidate in retrieved_candidates
@@ -369,6 +356,20 @@ def create_ai_recommendations(payload: AIRecommendationRequest, request: Request
         int(candidate["song"].get("id", -1)): candidate
         for candidate in retrieved_candidates
     }
+    candidate_songs = [candidate["song"] for candidate in retrieved_candidates]
+    ranked = recommend_songs(user_prefs=recommender_prefs, songs=candidate_songs, k=payload.k)
+    ranked, ranking_provider = rerank_recommendations_with_gemini(
+        user_request=request_summary,
+        user_prefs=recommender_prefs,
+        ranked_songs=ranked,
+        retrieval_context_by_song_id=retrieval_details_by_id,
+    )
+    overall_explanation, llm_explanations, explanation_provider = explain_ranked_songs(
+        user_request=request_summary,
+        user_prefs=recommender_prefs,
+        ranked_songs=ranked,
+        retrieval_context_by_song_id=retrieval_details_by_id,
+    )
     metadata_matches = sum(1 for candidate in retrieved_candidates if "metadata" in candidate["matched_sources"])
     lyric_matches = sum(1 for candidate in retrieved_candidates if "lyrics" in candidate["matched_sources"])
     both_matches = sum(1 for candidate in retrieved_candidates if len(candidate["matched_sources"]) > 1)
@@ -407,6 +408,7 @@ def create_ai_recommendations(payload: AIRecommendationRequest, request: Request
                     "retrieval_breakdown": candidate["retrieval_breakdown"],
                     "matched_sources": candidate["matched_sources"],
                     "source_reasons": candidate["source_reasons"],
+                    "lyric_snippets": candidate.get("lyric_snippets", []),
                 }
                 for candidate in retrieved_candidates
             ],
@@ -428,6 +430,10 @@ def create_ai_recommendations(payload: AIRecommendationRequest, request: Request
                 "source_reasons": retrieval_details_by_id.get(int(song.get("id", -1)), {}).get(
                     "source_reasons",
                     {"metadata": [], "lyrics": []},
+                ),
+                "lyric_snippets": retrieval_details_by_id.get(int(song.get("id", -1)), {}).get(
+                    "lyric_snippets",
+                    [],
                 ),
                 "math_explanation": explanation,
                 "llm_explanation": llm_explanations.get(

@@ -1,0 +1,49 @@
+Human user
+  |
+  v
+Frontend UI / API client
+  |
+  v
+FastAPI backend
+  |
+  +------------------------------+
+  | Input handling               |
+  | - manual preferences         |
+  | - natural-language request   |
+  +------------------------------+
+  |
+  v
+Preference parser
+  |- Gemini parser (if enabled)
+  |- Heuristic parser (fallback)
+  |
+  v
+Retriever (RAG)
+  |- metadata retrieval
+  |- lyrics retrieval
+  |- lyric snippet selection
+  |
+  v
+Candidate song set + lyric snippets
+  |
+  v
+Deterministic recommender
+  |- feature scoring
+  |- diversity reranking
+  |
+  +------------------------------+
+  | Optional LLM steps           |
+  |  (can be disabled/enabled due to the rate limits on API)
+  | - Gemini reranking           |
+  |   using retrieved metadata   |
+  |   + lyric snippets
+  | - Gemini explanations        |
+  |   using retrieved metadata   |
+  |   + lyric snippets
+  +------------------------------+
+  |
+  v
+Final recommendations + explanations
+  |
+  v
+Frontend display to user

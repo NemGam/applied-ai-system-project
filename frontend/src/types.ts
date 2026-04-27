@@ -60,6 +60,7 @@ export type RecommendationResult = {
     song: Song;
     score: number;
     retrieval_score: number;
+    lyric_snippets: string[];
     retrieval_breakdown: {
         metadata: number;
         lyrics: number;
@@ -103,15 +104,16 @@ export type AIRecommendationResponse = {
             mood: string;
             listening_context: string;
             retrieval_score: number;
-            retrieval_breakdown: {
-                metadata: number;
-                lyrics: number;
-            };
-            matched_sources: string[];
-            source_reasons: {
-                metadata: string[];
-                lyrics: string[];
-            };
+        retrieval_breakdown: {
+            metadata: number;
+            lyrics: number;
+        };
+        lyric_snippets: string[];
+        matched_sources: string[];
+        source_reasons: {
+            metadata: string[];
+            lyrics: string[];
+        };
         }>;
     };
     guardrail?: {

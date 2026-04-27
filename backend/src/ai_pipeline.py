@@ -871,6 +871,50 @@ def build_lyrics_document(song_id: int, lyrics_by_song_id: Dict[int, str]) -> st
     return lyrics_by_song_id.get(song_id, "").lower()
 
 
+def _select_lyric_snippets(
+    song_id: int,
+    lyrics_by_song_id: Dict[int, str],
+    query_tokens: set[str],
+    lyric_query_terms: List[str],
+    max_snippets: int = 3,
+) -> List[str]:
+    lyrics_text = lyrics_by_song_id.get(song_id, "").strip()
+    if not lyrics_text:
+        return []
+
+    lines = [line.strip() for line in lyrics_text.splitlines() if line.strip()]
+    if not lines:
+        return []
+
+    cue_tokens = set(_tokenize(" ".join(lyric_query_terms)))
+    target_tokens = set(query_tokens) | cue_tokens
+    scored_lines: List[Tuple[float, int, str]] = []
+
+    for index, line in enumerate(lines):
+        line_tokens = set(_tokenize(line))
+        if not line_tokens:
+            continue
+
+        overlap = len(line_tokens & target_tokens)
+        cue_overlap = len(line_tokens & cue_tokens)
+        phrase_bonus = 0.0
+        if any(_phrase_in_text(line, phrase) for phrase in lyric_query_terms if " " in phrase):
+            phrase_bonus = 0.5
+
+        score = float(overlap) + 0.35 * cue_overlap + phrase_bonus
+        if score <= 0:
+            continue
+
+        scored_lines.append((score, index, line))
+
+    if not scored_lines:
+        return []
+
+    top_lines = sorted(scored_lines, key=lambda item: (-item[0], item[1]))[:max_snippets]
+    top_lines.sort(key=lambda item: item[1])
+    return [line for _, _, line in top_lines]
+
+
 def build_search_text(user_request: str, user_prefs: Dict[str, Any]) -> str:
     pieces = [user_request.strip()]
     pieces.extend(user_prefs.get("favorite_genres", []))
@@ -955,11 +999,11 @@ def _score_lyrics_candidate(
     query_tokens: set[str],
     lyric_query_terms: List[str],
     lyrics_by_song_id: Dict[int, str],
-) -> Tuple[float, List[str]]:
+) -> Tuple[float, List[str], List[str]]:
     song_id = int(song.get("id", -1))
     lyrics_document = build_lyrics_document(song_id, lyrics_by_song_id)
     if not lyrics_document:
-        return 0.0, []
+        return 0.0, [], []
 
     lyric_tokens = set(_tokenize(lyrics_document))
     overlap_score = len(query_tokens & lyric_tokens) / max(len(query_tokens), 1)
@@ -973,7 +1017,16 @@ def _score_lyrics_candidate(
     if cue_overlap > 0:
         reasons.append(f"lyric theme overlap {cue_overlap:.2f}")
 
-    return round(score, 4), reasons
+    snippets = []
+    if score > 0:
+        snippets = _select_lyric_snippets(
+            song_id=song_id,
+            lyrics_by_song_id=lyrics_by_song_id,
+            query_tokens=query_tokens,
+            lyric_query_terms=lyric_query_terms,
+        )
+
+    return round(score, 4), reasons, snippets
 
 
 def retrieve_metadata_candidates(
@@ -1013,6 +1066,7 @@ def retrieve_metadata_candidates(
                     "metadata": metadata_reasons,
                     "lyrics": [],
                 },
+                "lyric_snippets": [],
             }
         )
 
@@ -1033,7 +1087,7 @@ def retrieve_lyric_candidates(
 
     retrieved: List[Dict[str, Any]] = []
     for song in songs:
-        lyrics_score, lyrics_reasons = _score_lyrics_candidate(
+        lyrics_score, lyrics_reasons, lyric_snippets = _score_lyrics_candidate(
             song=song,
             query_tokens=query_tokens,
             lyric_query_terms=lyric_query_terms,
@@ -1052,6 +1106,7 @@ def retrieve_lyric_candidates(
                     "metadata": [],
                     "lyrics": lyrics_reasons,
                 },
+                "lyric_snippets": lyric_snippets,
             }
         )
 
@@ -1094,6 +1149,7 @@ def retrieve_candidate_songs(
                     "retrieval_breakdown": {"metadata": 0.0, "lyrics": 0.0},
                     "matched_sources": [],
                     "source_reasons": {"metadata": [], "lyrics": []},
+                    "lyric_snippets": [],
                 },
             )
 
@@ -1102,6 +1158,8 @@ def retrieve_candidate_songs(
                 if source_score > merged["retrieval_breakdown"][source_name]:
                     merged["retrieval_breakdown"][source_name] = round(source_score, 4)
                     merged["source_reasons"][source_name] = candidate["source_reasons"].get(source_name, [])
+                    if source_name == "lyrics":
+                        merged["lyric_snippets"] = candidate.get("lyric_snippets", [])
 
                 if source_score > 0 and source_name not in merged["matched_sources"]:
                     merged["matched_sources"].append(source_name)
@@ -1228,10 +1286,12 @@ def explain_ranked_songs(
     user_request: str,
     user_prefs: Dict[str, Any],
     ranked_songs: List[Tuple[Dict[str, Any], float, str]],
+    retrieval_context_by_song_id: Dict[int, Dict[str, Any]] | None = None,
 ) -> Tuple[str, Dict[int, str], str]:
     if not ranked_songs:
         return "No matching songs were found.", {}, "heuristic"
 
+    retrieval_context_by_song_id = retrieval_context_by_song_id or {}
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key and gemini_explanations_enabled():
         prompt = {
@@ -1251,6 +1311,10 @@ def explain_ranked_songs(
                     "tempo_bpm": song.get("tempo_bpm"),
                     "vocal_presence": song.get("vocal_presence"),
                     "detailed_mood_tags": song.get("detailed_mood_tags"),
+                    "lyric_snippets": retrieval_context_by_song_id.get(
+                        int(song.get("id", 0)),
+                        {},
+                    ).get("lyric_snippets", []),
                     "math_score": round(score, 4),
                 }
                 for song, score, _ in ranked_songs
@@ -1262,7 +1326,7 @@ Return strict JSON with:
 - overall_explanation: string
 - song_explanations: array of objects with id:number and explanation:string
 
-Keep each explanation to one short sentence. Do not invent attributes.
+Keep each explanation to one short sentence. When lyric_snippets are present, use them as retrieved grounding context. Do not invent attributes.
 
 {json.dumps(prompt, indent=2)}
         """.strip()
@@ -1331,10 +1395,12 @@ def rerank_recommendations_with_gemini(
     user_request: str,
     user_prefs: Dict[str, Any],
     ranked_songs: List[Tuple[Dict[str, Any], float, str]],
+    retrieval_context_by_song_id: Dict[int, Dict[str, Any]] | None = None,
 ) -> Tuple[List[Tuple[Dict[str, Any], float, str]], str]:
     if len(ranked_songs) <= 1:
         return ranked_songs, "deterministic"
 
+    retrieval_context_by_song_id = retrieval_context_by_song_id or {}
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key or not gemini_reranking_enabled():
         return ranked_songs, "deterministic"
@@ -1361,6 +1427,10 @@ def rerank_recommendations_with_gemini(
                 "tempo_bpm": song.get("tempo_bpm"),
                 "vocal_presence": song.get("vocal_presence"),
                 "instrumental_focus": song.get("instrumental_focus"),
+                "lyric_snippets": retrieval_context_by_song_id.get(
+                    int(song.get("id", 0)),
+                    {},
+                ).get("lyric_snippets", []),
                 "math_score": round(score, 4),
                 "math_explanation": explanation,
             }
@@ -1374,7 +1444,7 @@ Return strict JSON with one key:
 
 Rank the candidates from best to worst for the user's request.
 Use every candidate exactly once.
-Do not invent attributes or songs.
+Use lyric_snippets when present as retrieved grounding context. Do not invent attributes or songs.
 
 {json.dumps(llm_prompt_payload, indent=2)}
     """.strip()

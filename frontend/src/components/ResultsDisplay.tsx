@@ -22,10 +22,6 @@ export default function ResultsDisplay({
 }: ResultsDisplayProps) {
     const featuredSongId = selectedSongId ?? results?.results[0]?.song.id ?? null;
     const otherResults = results?.results.filter((item) => item.song.id !== featuredSongId) ?? [];
-    const rankingStatus =
-        results?.providers.ranking === 'gemini'
-            ? 'Ranking: Gemini reranked the final list'
-            : 'Ranking: Deterministic order kept';
 
     return (
         <section className="panel results-panel results-panel--visible">
