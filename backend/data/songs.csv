@@ -1,0 +1,101 @@
+id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness,popularity_100,release_decade,detailed_mood_tags,vocal_presence,instrumental_focus,listening_context,replay_value
+1,Sunrise City,Neon Echo,pop,happy,0.82,118,0.84,0.79,0.18,83,2020s,euphoric;bright;uplifting,0.91,0.12,commute,0.86
+2,Midnight Coding,LoRoom,lofi,chill,0.42,78,0.56,0.62,0.71,74,2020s,calm;focused;nocturnal,0.18,0.88,study,0.81
+3,Storm Runner,Voltline,rock,intense,0.91,152,0.48,0.66,0.1,79,2010s,aggressive;adrenaline;defiant,0.73,0.24,workout,0.77
+4,Library Rain,Paper Lanterns,lofi,chill,0.35,72,0.6,0.58,0.86,68,2020s,nostalgic;gentle;rainy,0.09,0.94,reading,0.75
+5,Gym Hero,Max Pulse,pop,intense,0.93,132,0.77,0.88,0.05,88,2020s,confident;explosive;motivational,0.95,0.06,workout,0.84
+6,Spacewalk Thoughts,Orbit Bloom,ambient,chill,0.28,60,0.65,0.41,0.92,63,2010s,weightless;reflective;ethereal,0.04,0.98,sleep,0.7
+7,Coffee Shop Stories,Slow Stereo,jazz,relaxed,0.37,90,0.71,0.54,0.89,66,2000s,warm;cozy;unhurried,0.42,0.79,cafe,0.72
+8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22,81,2010s,brooding;neon;cinematic,0.58,0.48,night_drive,0.83
+9,Focus Flow,LoRoom,lofi,focused,0.4,80,0.59,0.6,0.78,76,2020s,steady;clear-headed;productive,0.12,0.9,study,0.82
+10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35,80,2010s,romantic;carefree;sunset,0.87,0.21,party,0.79
+11,Afterglow Arcade,Pixel Harbor,synthwave,energetic,0.81,116,0.68,0.84,0.19,85,2010s,retro;electrified;playful,0.61,0.39,party,0.85
+12,Quiet Terminal,Cloud District,ambient,focused,0.31,64,0.52,0.38,0.94,61,2020s,minimal;isolated;meditative,0.03,0.99,deep_work,0.69
+13,Golden Hour Steps,Juniper Lane,indie pop,happy,0.72,122,0.86,0.8,0.33,82,2020s,hopeful;golden;nostalgic,0.89,0.18,walk,0.84
+14,Basement Blueprint,Code Current,hip hop,focused,0.66,96,0.58,0.77,0.27,78,2010s,gritty;driven;clever,0.93,0.16,deep_work,0.8
+15,Mountain Static,Iron Pines,rock,moody,0.88,146,0.44,0.63,0.12,73,2000s,restless;stormy;brooding,0.69,0.31,night_drive,0.74
+16,Slow Bloom Cafe,Velvet Kettle,jazz,relaxed,0.41,88,0.74,0.57,0.83,65,2000s,intimate;silky;late-night,0.47,0.74,dinner,0.71
+17,Deep Work Drift,LoRoom,lofi,focused,0.39,76,0.55,0.61,0.81,77,2020s,immersive;steady;low-key,0.1,0.92,deep_work,0.83
+18,Signal in the Fog,Neon Echo,electronic,moody,0.7,108,0.46,0.75,0.24,84,2020s,tense;mysterious;urban,0.64,0.36,night_drive,0.81
+19,Garden Street,Juniper Lane,indie pop,happy,0.75,122,0.86,0.81,0.42,99,2010s,golden;hopeful;nostalgic,0.93,0.24,walk,0.78
+20,Pages Focus,LoRoom,lofi,chill,0.45,76,0.59,0.65,0.74,65,2020s,immersive;nocturnal;calm,0.17,0.94,deep_work,0.74
+21,Youth Bicycle,Juniper Lane,indie pop,happy,0.73,123,0.74,0.82,0.28,67,2020s,nostalgic;golden;hopeful,0.95,0.21,walk,0.92
+22,Breeze Void,Velvet Sound,ambient,chill,0.23,60,0.28,0.24,0.94,57,2010s,relax;calm;soft,0.15,0.86,sleep,0.79
+23,Window Vibes,Paper Lanterns,lofi,chill,0.42,78,0.6,0.58,0.85,67,2020s,nostalgic;gentle;rainy,0.03,0.97,reading,0.7
+24,Chill Tea,Paper Lanterns,lofi,chill,0.33,79,0.54,0.49,0.82,82,2020s,gentle;nostalgic;rainy,0.04,0.9,reading,0.66
+25,Zen Dance,Neon Echo,electronic,happy,0.83,114,0.65,0.8,0.2,72,2020s,urban;brooding;uplifting,0.74,0.34,night_drive,0.58
+26,Beat Sky,Neon Echo,pop,moody,0.84,126,0.63,0.77,0.13,87,2020s,mysterious;tense;urban,0.65,0.27,night_drive,0.82
+27,Library Chill,LoRoom,lofi,focused,0.38,79,0.55,0.64,0.8,64,2020s,calm;immersive;nocturnal,0.21,0.87,study,0.61
+28,City Beat,Neon Echo,pop,happy,0.69,104,0.62,0.73,0.24,64,2020s,neon;mysterious;bright,0.69,0.29,commute,0.95
+29,Aura Neon,Code Current,hip hop,focused,0.57,102,0.59,0.83,0.33,76,2010s,clever;gritty;driven,1.0,0.18,deep_work,0.87
+30,Storm Wire,Voltline,rock,intense,1.0,155,0.55,0.64,0.11,67,2010s,adrenaline;aggressive;defiant,0.69,0.18,workout,0.91
+31,Wander Aura,Orbit Bloom,ambient,chill,0.22,60,0.73,0.45,0.9,66,2020s,weightless;ethereal;reflective,0.01,0.99,sleep,0.76
+32,Smile Spring,Juniper Lane,indie pop,happy,0.76,130,0.84,0.78,0.33,67,2020s,golden;hopeful;nostalgic,0.85,0.14,walk,0.67
+33,Love Sky,Slow Stereo,jazz,relaxed,0.34,89,0.69,0.62,0.91,68,2010s,cozy;warm;unhurried,0.46,0.82,cafe,0.75
+34,Breeze Bicycle,Juniper Lane,indie pop,happy,0.71,120,0.84,0.85,0.27,81,2010s,hopeful;nostalgic;golden,0.88,0.23,walk,0.83
+35,Sky Echo,Max Pulse,pop,intense,0.85,133,0.68,0.92,0.1,66,2020s,confident;motivational;explosive,0.96,0.05,workout,0.69
+36,Aura Silence,Velvet Sound,ambient,chill,0.17,64,0.34,0.24,0.94,74,2010s,relax;calm;soft,0.03,0.9,sleep,0.63
+37,Pixel Chrome,Pixel Harbor,synthwave,energetic,0.76,110,0.72,0.82,0.2,76,2010s,electrified;retro;playful,0.6,0.35,party,0.71
+38,Vibes Focus,LoRoom,lofi,focused,0.31,78,0.61,0.57,0.78,79,2010s,focused;nocturnal;productive,0.19,0.95,study,0.69
+39,Night Walk,Velvet Kettle,jazz,relaxed,0.47,93,0.76,0.63,0.84,68,2010s,intimate;silky;late-night,0.55,0.75,dinner,0.77
+40,Drift Wander,Cloud District,ambient,focused,0.35,73,0.43,0.46,0.94,75,2010s,minimal;isolated;meditative,0.07,1.0,deep_work,0.74
+41,Rain Library,LoRoom,lofi,chill,0.37,80,0.64,0.59,0.68,59,2010s,immersive;clear-headed;calm,0.09,0.96,deep_work,0.78
+42,Star Light,Electric Avenue,pop,happy,0.68,124,0.83,0.77,0.27,77,2020s,fun;joy;smile,0.8,0.12,party,0.6
+43,Rebel Iron,Crimson Tide,rock,intense,0.83,141,0.53,0.44,0.13,57,2020s,heavy;strong;power,0.56,0.39,workout,0.86
+44,Street Walk,Indigo Parade,indie pop,happy,0.82,124,0.85,0.8,0.29,86,2010s,romantic;carefree;sunset,0.87,0.25,party,0.87
+45,Rain Star,Code Current,hip hop,focused,0.68,101,0.6,0.71,0.26,60,2010s,gritty;clever;driven,0.92,0.17,deep_work,0.69
+46,Shadow Road,Crimson Tide,rock,intense,0.84,135,0.55,0.53,0.13,68,2020s,heavy;strong;power,0.61,0.4,workout,0.85
+47,Echo Drift,Code Current,hip hop,focused,0.61,94,0.57,0.78,0.31,55,2020s,clever;driven;gritty,0.99,0.1,deep_work,0.96
+48,Rebel Runner,Velvet Kettle,jazz,relaxed,0.47,90,0.72,0.55,0.76,80,2010s,intimate;silky;late-night,0.48,0.79,dinner,0.61
+49,Road Drive,Crimson Tide,rock,intense,0.86,143,0.49,0.5,0.1,69,2020s,heavy;strong;power,0.6,0.42,workout,0.73
+50,Shadow Window,Velvet Kettle,jazz,relaxed,0.45,77,0.81,0.6,0.74,68,2010s,late-night;silky;intimate,0.48,0.72,dinner,0.76
+51,Light Dance,Electric Avenue,pop,happy,0.76,124,0.86,0.8,0.11,80,2020s,fun;joy;smile,0.81,0.23,party,0.63
+52,Sky Wander,Slow Stereo,jazz,relaxed,0.51,99,0.75,0.52,0.9,83,2010s,cozy;warm;unhurried,0.4,0.86,cafe,0.86
+53,Silence Ocean,Orbit Bloom,ambient,chill,0.26,61,0.61,0.43,0.89,69,2010s,weightless;reflective;ethereal,0.06,0.97,sleep,0.69
+54,Mist Library,Slow Stereo,jazz,relaxed,0.41,92,0.72,0.55,0.93,76,2020s,unhurried;warm;cozy,0.49,0.84,cafe,0.62
+55,Quiet Vibes,LoRoom,lofi,chill,0.42,76,0.56,0.54,0.71,76,2020s,nocturnal;focused;productive,0.15,0.95,deep_work,0.77
+56,Midnight Pages,LoRoom,lofi,chill,0.39,87,0.58,0.67,0.77,67,2010s,low-key;nocturnal;productive,0.23,0.96,study,0.84
+57,Drift Silence,Orbit Bloom,ambient,chill,0.25,61,0.68,0.51,1.0,82,2020s,reflective;weightless;ethereal,0.02,0.96,sleep,0.84
+58,Spike Shadow,Crimson Tide,rock,intense,0.9,137,0.47,0.56,0.14,64,2020s,heavy;strong;power,0.6,0.44,workout,0.66
+59,Terminal Rain,LoRoom,lofi,focused,0.4,82,0.62,0.63,0.66,58,2010s,calm;clear-headed;productive,0.12,1.0,deep_work,0.77
+60,Library Autumn,Paper Lanterns,lofi,chill,0.46,73,0.6,0.62,0.86,85,2010s,gentle;nostalgic;rainy,0.13,0.86,reading,0.7
+61,Drive Terminal,Code Current,hip hop,focused,0.69,106,0.62,0.76,0.31,76,2010s,clever;driven;gritty,0.94,0.19,deep_work,0.69
+62,Road Wire,Iron Pines,rock,moody,0.93,145,0.43,0.55,0.04,67,2020s,brooding;stormy;restless,0.65,0.29,night_drive,0.93
+63,Colors Sun,Juniper Lane,indie pop,happy,0.71,122,0.9,0.83,0.3,60,2020s,hopeful;golden;nostalgic,0.92,0.16,walk,0.67
+64,Road Wire,Velvet Kettle,jazz,relaxed,0.36,91,0.73,0.61,0.9,93,2020s,late-night;silky;intimate,0.43,0.71,dinner,0.78
+65,Road Rebel,Voltline,rock,intense,0.95,154,0.53,0.64,0.09,85,2020s,adrenaline;aggressive;defiant,0.83,0.26,workout,0.78
+66,Glow Beat,Max Pulse,pop,intense,0.94,127,0.89,0.92,0.14,61,2020s,motivational;confident;explosive,0.97,0.03,workout,0.62
+67,Blade Volt,Crimson Tide,rock,intense,0.88,141,0.5,0.44,0.11,57,2020s,heavy;strong;power,0.6,0.52,workout,0.66
+68,Iron Edge,Voltline,rock,intense,0.78,156,0.5,0.7,0.11,54,2020s,aggressive;defiant;adrenaline,0.64,0.2,workout,0.81
+69,Midnight Window,Paper Lanterns,lofi,chill,0.38,65,0.58,0.69,0.91,73,2010s,nostalgic;gentle;rainy,0.11,0.9,reading,0.73
+70,Fire Summer,Electric Avenue,pop,happy,0.8,123,0.79,0.83,0.22,80,2020s,fun;joy;smile,0.79,0.15,party,0.61
+71,Library Beat,Slow Stereo,jazz,relaxed,0.33,89,0.67,0.49,0.99,76,2010s,cozy;unhurried;warm,0.41,0.82,cafe,0.82
+72,Wire Iron,Crimson Tide,rock,intense,0.86,147,0.48,0.48,0.16,66,2020s,heavy;strong;power,0.58,0.43,workout,0.66
+73,Rebel Spike,Voltline,rock,intense,0.91,157,0.47,0.63,0.13,76,2020s,defiant;adrenaline;aggressive,0.77,0.32,workout,0.51
+74,Echo Rhythm,Code Current,hip hop,focused,0.62,94,0.59,0.75,0.23,53,2020s,gritty;driven;clever,0.9,0.17,deep_work,0.74
+75,Storm Wire,Iron Pines,rock,moody,0.88,155,0.48,0.64,0.03,68,2020s,stormy;brooding;restless,0.75,0.28,night_drive,0.8
+76,Edge Thunder,Iron Pines,rock,moody,0.91,140,0.49,0.64,0.12,69,2020s,brooding;stormy;restless,0.68,0.25,night_drive,0.66
+77,Mist Zen,Orbit Bloom,ambient,chill,0.34,55,0.75,0.37,1.0,72,2010s,ethereal;weightless;reflective,0.03,1.0,sleep,0.68
+78,Chill Aura,Slow Stereo,jazz,relaxed,0.38,84,0.63,0.62,0.85,67,2020s,unhurried;warm;cozy,0.55,0.75,cafe,0.98
+79,Float Time,Velvet Kettle,jazz,relaxed,0.41,87,0.56,0.62,0.79,84,2010s,intimate;late-night;silky,0.51,0.62,dinner,0.74
+80,Synth Arcade,Neon Echo,synthwave,happy,0.76,116,0.64,0.77,0.21,68,2010s,mysterious;euphoric;bright,0.81,0.34,commute,0.83
+81,Sun Float,Velvet Kettle,jazz,relaxed,0.41,90,0.7,0.57,0.92,69,2020s,intimate;silky;late-night,0.46,0.68,dinner,0.64
+82,Thunder Spike,Crimson Tide,rock,intense,0.87,144,0.44,0.53,0.18,58,2010s,heavy;strong;power,0.57,0.4,workout,0.91
+83,Pages Tea,Velvet Kettle,jazz,relaxed,0.3,87,0.74,0.59,0.83,66,2020s,intimate;silky;late-night,0.42,0.77,dinner,0.77
+84,Drift Horizon,Cloud District,ambient,focused,0.29,65,0.49,0.39,0.92,63,2010s,meditative;minimal;isolated,0.0,1.0,deep_work,1.0
+85,Storm Thunder,Voltline,rock,intense,1.0,150,0.46,0.67,0.05,57,2010s,adrenaline;defiant;aggressive,0.75,0.25,workout,0.83
+86,Walk Heart,Slow Stereo,jazz,relaxed,0.34,88,0.72,0.51,0.85,74,2010s,warm;cozy;unhurried,0.4,0.78,cafe,0.69
+87,Vibes Drive,Slow Stereo,jazz,relaxed,0.43,90,0.7,0.52,0.82,84,2010s,warm;cozy;unhurried,0.47,0.87,cafe,0.96
+88,Vibes Rain,LoRoom,lofi,focused,0.45,77,0.48,0.69,0.78,84,2010s,productive;steady;immersive,0.09,0.86,study,0.66
+89,Rebel Shadow,Crimson Tide,rock,intense,0.85,135,0.54,0.45,0.08,84,2010s,heavy;strong;power,0.59,0.43,workout,0.64
+90,Summer Rhythm,Electric Avenue,pop,happy,0.72,120,0.74,0.78,0.28,71,2010s,fun;joy;smile,0.77,0.3,party,0.77
+91,Cyber Pixel,Pixel Harbor,synthwave,energetic,0.84,118,0.76,0.82,0.19,73,2020s,electrified;retro;playful,0.61,0.42,party,0.81
+92,Mist Silence,Orbit Bloom,ambient,chill,0.37,57,0.66,0.49,0.9,69,2010s,weightless;ethereal;reflective,0.08,0.94,sleep,0.77
+93,Neon Synth,Pixel Harbor,synthwave,energetic,0.74,117,0.7,0.84,0.33,85,2020s,retro;electrified;playful,0.62,0.4,party,0.76
+94,Summer Laser,Code Current,hip hop,focused,0.68,94,0.61,0.72,0.29,73,2010s,clever;gritty;driven,0.93,0.19,deep_work,0.81
+95,Shadow Thunder,Iron Pines,rock,moody,0.9,144,0.47,0.57,0.1,55,2010s,brooding;stormy;restless,0.77,0.37,night_drive,0.73
+96,Lights Walk,Velvet Kettle,jazz,relaxed,0.45,83,0.8,0.52,0.7,65,2010s,intimate;late-night;silky,0.46,0.79,dinner,0.73
+97,Drive Runner,Voltline,rock,intense,0.89,147,0.46,0.65,0.0,50,2020s,adrenaline;aggressive;defiant,0.73,0.17,workout,0.88
+98,Tea Pages,LoRoom,lofi,chill,0.43,75,0.58,0.7,0.81,72,2020s,immersive;low-key;steady,0.04,0.85,study,0.73
+99,Quiet Coffee,Paper Lanterns,lofi,chill,0.36,71,0.53,0.56,0.89,62,2020s,rainy;gentle;nostalgic,0.02,0.95,reading,0.72
+100,Focus Chill,Paper Lanterns,lofi,chill,0.43,73,0.67,0.57,0.84,85,2010s,nostalgic;rainy;gentle,0.09,0.93,reading,0.74
