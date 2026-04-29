@@ -5,9 +5,12 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from backend.src.ai_pipeline import (
+    choose_agent_clarification_question,
     explain_ranked_songs,
+    evaluate_agent_confidence,
     is_out_of_scope_music_request,
     rerank_recommendations_with_gemini,
+    merge_clarification_preferences,
     manual_preferences_to_recommender,
     merge_recommender_preferences,
     personalize_recommender_preferences,
@@ -63,6 +66,10 @@ class AIRecommendationRequest(BaseModel):
     taste_profile: ManualPreferencesInput | None = None
     k: int = Field(default=5, ge=1, le=20)
     retrieval_k: int = Field(default=20, ge=1, le=50)
+
+
+class AgentRecommendationRequest(AIRecommendationRequest):
+    clarification_answer: str | None = None
 
 
 def _songs(request: Request) -> List[Dict[str, Any]]:
@@ -204,6 +211,94 @@ def _out_of_scope_ai_response(
     }
 
 
+def _resolve_ai_request_preferences(payload: AIRecommendationRequest) -> Dict[str, Any]:
+    personalization_summary: Dict[str, Any] = {}
+    personalization_enabled = False
+    personalization_source: str | None = None
+
+    user_text = (payload.user_text or "").strip()
+    has_text = bool(user_text)
+    has_manual = payload.manual_preferences is not None
+    has_taste_profile = payload.taste_profile is not None
+    if not has_text and not has_manual:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide user_text, manual_preferences, or both",
+        )
+
+    if has_text and not has_manual:
+        parsed_prefs, parser_provider = parse_preferences_with_gemini(user_text)
+        if is_out_of_scope_music_request(user_text, parsed_prefs):
+            return {
+                "out_of_scope": _out_of_scope_ai_response(
+                    user_request=user_text,
+                    input_mode="natural_language",
+                    parser_provider=parser_provider,
+                )
+            }
+        recommender_prefs = parsed_prefs
+        if has_taste_profile:
+            taste_profile_dict = _payload_to_dict(payload.taste_profile)
+            taste_profile_prefs = manual_preferences_to_recommender(taste_profile_dict)
+            recommender_prefs = personalize_recommender_preferences(
+                parsed_prefs=parsed_prefs,
+                taste_profile_prefs=taste_profile_prefs,
+            )
+            personalization_summary = summarize_preferences(taste_profile_prefs)
+            personalization_enabled = bool(personalization_summary)
+            personalization_source = "taste_profile" if personalization_enabled else None
+            if personalization_enabled:
+                parser_provider = f"{parser_provider}+taste_profile"
+        request_summary = user_text
+        input_mode = "natural_language"
+    elif has_manual and not has_text:
+        manual_dict = _payload_to_dict(payload.manual_preferences)
+        recommender_prefs = manual_preferences_to_recommender(manual_dict)
+        parser_provider = "manual"
+        request_summary = _manual_request_summary(manual_dict)
+        input_mode = "manual"
+    else:
+        manual_dict = _payload_to_dict(payload.manual_preferences)
+        manual_prefs = manual_preferences_to_recommender(manual_dict)
+        parsed_prefs, parsed_provider = parse_preferences_with_gemini(user_text)
+        if not any(manual_prefs.get(key) for key in ("favorite_genres", "favorite_moods", "favorite_contexts", "preferred_mood_tags")) and not any(
+            manual_prefs.get(key) is not None
+            for key in (
+                "target_energy",
+                "target_valence",
+                "target_danceability",
+                "target_acousticness",
+                "target_tempo_bpm",
+                "target_vocal_presence",
+                "target_instrumental_focus",
+            )
+        ) and is_out_of_scope_music_request(user_text, parsed_prefs):
+            return {
+                "out_of_scope": _out_of_scope_ai_response(
+                    user_request=_hybrid_request_summary(_manual_request_summary(manual_dict), user_text),
+                    input_mode="hybrid",
+                    parser_provider=f"manual+{parsed_provider}",
+                )
+            }
+        recommender_prefs = merge_recommender_preferences(
+            manual_prefs=manual_prefs,
+            parsed_prefs=parsed_prefs,
+        )
+        parser_provider = f"manual+{parsed_provider}"
+        request_summary = _hybrid_request_summary(_manual_request_summary(manual_dict), user_text)
+        input_mode = "hybrid"
+
+    return {
+        "input_mode": input_mode,
+        "user_request": request_summary,
+        "recommender_prefs": recommender_prefs,
+        "parser_provider": parser_provider,
+        "personalization_summary": personalization_summary,
+        "personalization_enabled": personalization_enabled,
+        "personalization_source": personalization_source,
+    }
+
+
 @router.get("/")
 def root() -> Dict[str, str]:
     return {
@@ -269,77 +364,16 @@ def create_recommendations(payload: RecommendationRequest, request: Request) -> 
 def create_ai_recommendations(payload: AIRecommendationRequest, request: Request) -> Dict[str, Any]:
     songs = _songs(request)
     lyrics_by_song_id = _lyrics_by_song_id(request)
-    personalization_summary: Dict[str, Any] = {}
-    personalization_enabled = False
-    personalization_source: str | None = None
-
-    user_text = (payload.user_text or "").strip()
-    has_text = bool(user_text)
-    has_manual = payload.manual_preferences is not None
-    has_taste_profile = payload.taste_profile is not None
-    if not has_text and not has_manual:
-        raise HTTPException(
-            status_code=400,
-            detail="Provide user_text, manual_preferences, or both",
-        )
-
-    if has_text and not has_manual:
-        parsed_prefs, parser_provider = parse_preferences_with_gemini(user_text)
-        if is_out_of_scope_music_request(user_text, parsed_prefs):
-            return _out_of_scope_ai_response(
-                user_request=user_text,
-                input_mode="natural_language",
-                parser_provider=parser_provider,
-            )
-        recommender_prefs = parsed_prefs
-        if has_taste_profile:
-            taste_profile_dict = _payload_to_dict(payload.taste_profile)
-            taste_profile_prefs = manual_preferences_to_recommender(taste_profile_dict)
-            recommender_prefs = personalize_recommender_preferences(
-                parsed_prefs=parsed_prefs,
-                taste_profile_prefs=taste_profile_prefs,
-            )
-            personalization_summary = summarize_preferences(taste_profile_prefs)
-            personalization_enabled = bool(personalization_summary)
-            personalization_source = "taste_profile" if personalization_enabled else None
-            if personalization_enabled:
-                parser_provider = f"{parser_provider}+taste_profile"
-        request_summary = user_text
-        input_mode = "natural_language"
-    elif has_manual and not has_text:
-        manual_dict = _payload_to_dict(payload.manual_preferences)
-        recommender_prefs = manual_preferences_to_recommender(manual_dict)
-        parser_provider = "manual"
-        request_summary = _manual_request_summary(manual_dict)
-        input_mode = "manual"
-    else:
-        manual_dict = _payload_to_dict(payload.manual_preferences)
-        manual_prefs = manual_preferences_to_recommender(manual_dict)
-        parsed_prefs, parsed_provider = parse_preferences_with_gemini(user_text)
-        if not any(manual_prefs.get(key) for key in ("favorite_genres", "favorite_moods", "favorite_contexts", "preferred_mood_tags")) and not any(
-            manual_prefs.get(key) is not None
-            for key in (
-                "target_energy",
-                "target_valence",
-                "target_danceability",
-                "target_acousticness",
-                "target_tempo_bpm",
-                "target_vocal_presence",
-                "target_instrumental_focus",
-            )
-        ) and is_out_of_scope_music_request(user_text, parsed_prefs):
-            return _out_of_scope_ai_response(
-                user_request=_hybrid_request_summary(_manual_request_summary(manual_dict), user_text),
-                input_mode="hybrid",
-                parser_provider=f"manual+{parsed_provider}",
-            )
-        recommender_prefs = merge_recommender_preferences(
-            manual_prefs=manual_prefs,
-            parsed_prefs=parsed_prefs,
-        )
-        parser_provider = f"manual+{parsed_provider}"
-        request_summary = _hybrid_request_summary(_manual_request_summary(manual_dict), user_text)
-        input_mode = "hybrid"
+    resolution = _resolve_ai_request_preferences(payload)
+    if "out_of_scope" in resolution:
+        return resolution["out_of_scope"]
+    personalization_summary = resolution["personalization_summary"]
+    personalization_enabled = resolution["personalization_enabled"]
+    personalization_source = resolution["personalization_source"]
+    recommender_prefs = resolution["recommender_prefs"]
+    parser_provider = resolution["parser_provider"]
+    request_summary = resolution["user_request"]
+    input_mode = resolution["input_mode"]
 
     retrieved_candidates = retrieve_candidate_songs(
         user_request=request_summary,
@@ -443,4 +477,220 @@ def create_ai_recommendations(payload: AIRecommendationRequest, request: Request
             }
             for song, score, explanation in ranked
         ],
+    }
+
+
+@router.post("/recommendations/agent")
+def create_agent_recommendations(payload: AgentRecommendationRequest, request: Request) -> Dict[str, Any]:
+    songs = _songs(request)
+    lyrics_by_song_id = _lyrics_by_song_id(request)
+    resolution = _resolve_ai_request_preferences(payload)
+    if "out_of_scope" in resolution:
+        response = resolution["out_of_scope"]
+        response["agent"] = {
+            "enabled": True,
+            "status": "stopped",
+            "needs_clarification": False,
+            "clarification_question": None,
+            "clarification_choices": [],
+            "confidence": "not_run",
+            "trace": [
+                {"action": "parse_request", "status": "completed"},
+                {"action": "guardrail", "status": "out_of_scope"},
+            ],
+        }
+        return response
+
+    personalization_summary = resolution["personalization_summary"]
+    personalization_enabled = resolution["personalization_enabled"]
+    personalization_source = resolution["personalization_source"]
+    recommender_prefs = resolution["recommender_prefs"]
+    parser_provider = resolution["parser_provider"]
+    request_summary = resolution["user_request"]
+    input_mode = resolution["input_mode"]
+
+    clarification_answer = (payload.clarification_answer or "").strip()
+    trace = [{"action": "parse_request", "status": "completed"}]
+    if clarification_answer:
+        recommender_prefs = merge_clarification_preferences(recommender_prefs, clarification_answer)
+        request_summary = f"{request_summary}. Clarification: {clarification_answer}"
+        trace.append({"action": "merge_clarification", "status": "completed"})
+
+    retrieved_candidates = retrieve_candidate_songs(
+        user_request=request_summary,
+        user_prefs=recommender_prefs,
+        songs=songs,
+        lyrics_by_song_id=lyrics_by_song_id,
+        limit=payload.retrieval_k,
+    )
+    retrieval_scores_by_id = {
+        int(candidate["song"].get("id", -1)): candidate["retrieval_score"]
+        for candidate in retrieved_candidates
+    }
+    retrieval_details_by_id = {
+        int(candidate["song"].get("id", -1)): candidate
+        for candidate in retrieved_candidates
+    }
+    candidate_songs = [candidate["song"] for candidate in retrieved_candidates]
+    ranked = recommend_songs(user_prefs=recommender_prefs, songs=candidate_songs, k=payload.k)
+    confidence_report = evaluate_agent_confidence(recommender_prefs, retrieved_candidates, ranked)
+    trace.append(
+        {
+            "action": "evaluate_confidence",
+            "status": confidence_report["confidence"],
+            "signal_count": confidence_report["signal_count"],
+        }
+    )
+
+    clarification_prompt = None
+    if not clarification_answer and confidence_report["confidence"] == "low":
+        clarification_prompt = choose_agent_clarification_question(recommender_prefs)
+
+    if clarification_prompt is not None:
+        trace.append({"action": "ask_clarification", "status": "completed"})
+        return {
+            "input_mode": input_mode,
+            "user_request": request_summary,
+            "detected_preferences": summarize_preferences(recommender_prefs),
+            "personalization": {
+                "enabled": personalization_enabled,
+                "source": personalization_source,
+                "taste_profile": personalization_summary,
+            },
+            "providers": {
+                "parser": parser_provider,
+                "ranking": "not_run",
+                "explanations": "not_run",
+            },
+            "retrieval": {
+                "strategy": "metadata+lyrics",
+                "candidate_count": len(retrieved_candidates),
+                "source_counts": {
+                    "metadata": sum(1 for candidate in retrieved_candidates if "metadata" in candidate["matched_sources"]),
+                    "lyrics": sum(1 for candidate in retrieved_candidates if "lyrics" in candidate["matched_sources"]),
+                    "both": sum(1 for candidate in retrieved_candidates if len(candidate["matched_sources"]) > 1),
+                },
+                "candidates": [
+                    {
+                        "song_id": candidate["song"].get("id"),
+                        "title": candidate["song"].get("title"),
+                        "artist": candidate["song"].get("artist"),
+                        "retrieval_score": candidate["retrieval_score"],
+                        "matched_sources": candidate["matched_sources"],
+                    }
+                    for candidate in retrieved_candidates
+                ],
+            },
+            "overall_explanation": "The agent needs one more preference before finalizing recommendations.",
+            "results": [],
+            "agent": {
+                "enabled": True,
+                "status": "needs_clarification",
+                "needs_clarification": True,
+                "clarification_question": clarification_prompt["question"],
+                "clarification_choices": clarification_prompt["choices"],
+                "clarification_slot": clarification_prompt["slot"],
+                "confidence": confidence_report["confidence"],
+                "trace": trace,
+                "confidence_report": confidence_report,
+            },
+        }
+
+    ranked, ranking_provider = rerank_recommendations_with_gemini(
+        user_request=request_summary,
+        user_prefs=recommender_prefs,
+        ranked_songs=ranked,
+        retrieval_context_by_song_id=retrieval_details_by_id,
+    )
+    overall_explanation, llm_explanations, explanation_provider = explain_ranked_songs(
+        user_request=request_summary,
+        user_prefs=recommender_prefs,
+        ranked_songs=ranked,
+        retrieval_context_by_song_id=retrieval_details_by_id,
+    )
+    metadata_matches = sum(1 for candidate in retrieved_candidates if "metadata" in candidate["matched_sources"])
+    lyric_matches = sum(1 for candidate in retrieved_candidates if "lyrics" in candidate["matched_sources"])
+    both_matches = sum(1 for candidate in retrieved_candidates if len(candidate["matched_sources"]) > 1)
+    trace.append({"action": "retrieve_and_rank", "status": "completed"})
+    trace.append({"action": "respond", "status": "completed"})
+
+    return {
+        "input_mode": input_mode,
+        "user_request": request_summary,
+        "detected_preferences": summarize_preferences(recommender_prefs),
+        "personalization": {
+            "enabled": personalization_enabled,
+            "source": personalization_source,
+            "taste_profile": personalization_summary,
+        },
+        "providers": {
+            "parser": parser_provider,
+            "ranking": ranking_provider,
+            "explanations": explanation_provider,
+        },
+        "retrieval": {
+            "strategy": "metadata+lyrics",
+            "candidate_count": len(retrieved_candidates),
+            "source_counts": {
+                "metadata": metadata_matches,
+                "lyrics": lyric_matches,
+                "both": both_matches,
+            },
+            "candidates": [
+                {
+                    "song_id": candidate["song"].get("id"),
+                    "title": candidate["song"].get("title"),
+                    "artist": candidate["song"].get("artist"),
+                    "genre": candidate["song"].get("genre"),
+                    "mood": candidate["song"].get("mood"),
+                    "listening_context": candidate["song"].get("listening_context"),
+                    "retrieval_score": candidate["retrieval_score"],
+                    "retrieval_breakdown": candidate["retrieval_breakdown"],
+                    "matched_sources": candidate["matched_sources"],
+                    "source_reasons": candidate["source_reasons"],
+                    "lyric_snippets": candidate.get("lyric_snippets", []),
+                }
+                for candidate in retrieved_candidates
+            ],
+        },
+        "overall_explanation": overall_explanation,
+        "results": [
+            {
+                "song": _song_with_assets(request, song),
+                "score": score,
+                "retrieval_score": retrieval_scores_by_id.get(int(song.get("id", -1)), 0.0),
+                "retrieval_breakdown": retrieval_details_by_id.get(int(song.get("id", -1)), {}).get(
+                    "retrieval_breakdown",
+                    {"metadata": 0.0, "lyrics": 0.0},
+                ),
+                "matched_sources": retrieval_details_by_id.get(int(song.get("id", -1)), {}).get(
+                    "matched_sources",
+                    [],
+                ),
+                "source_reasons": retrieval_details_by_id.get(int(song.get("id", -1)), {}).get(
+                    "source_reasons",
+                    {"metadata": [], "lyrics": []},
+                ),
+                "lyric_snippets": retrieval_details_by_id.get(int(song.get("id", -1)), {}).get(
+                    "lyric_snippets",
+                    [],
+                ),
+                "math_explanation": explanation,
+                "llm_explanation": llm_explanations.get(
+                    int(song.get("id", -1)),
+                    explanation,
+                ),
+            }
+            for song, score, explanation in ranked
+        ],
+        "agent": {
+            "enabled": True,
+            "status": "completed",
+            "needs_clarification": False,
+            "clarification_question": None,
+            "clarification_choices": [],
+            "confidence": confidence_report["confidence"],
+            "trace": trace,
+            "confidence_report": confidence_report,
+        },
     }

@@ -157,11 +157,11 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
         user_prefs,
         "category_weights",
         {
-            "genre": 0.40,
-            "mood": 0.25,
-            "release_decade": 0.15,
-            "listening_context": 0.10,
-            "detailed_mood_tags": 0.10,
+            "genre": 0.50,
+            "mood": 0.30,
+            "release_decade": 0.08,
+            "listening_context": 0.07,
+            "detailed_mood_tags": 0.05,
         },
     )
     active_category_features: List[Tuple[str, float, float]] = [
@@ -238,7 +238,7 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     blend_weights = _get_weight_map(
         user_prefs,
         "blend_weights",
-        {"categorical": 0.55, "numeric": 0.45},
+        {"categorical": 0.72, "numeric": 0.28},
     )
     blend_weight_sum = blend_weights.get("categorical", 0.0) + blend_weights.get("numeric", 0.0)
     if blend_weight_sum <= 0:
