@@ -177,7 +177,7 @@ export default function SongCard({
                                 onMouseLeave={() => setIsTooltipOpen(false)}
                                 onFocus={() => setIsTooltipOpen(true)}
                                 onBlur={() => setIsTooltipOpen(false)}>
-                                <InfoIcon size={16} />
+                                <InfoIcon size={24} />
                             </button>
                         </div>
                     </div>
