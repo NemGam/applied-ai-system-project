@@ -101,7 +101,11 @@ I kept the ranking logic deterministic so the core recommendations stay understa
 - Gemini features can still fall back to heuristic behavior when the response is missing or invalid.
 
 ## Demo
-![demo video](assets/Demo.mp4)
+
+
+https://github.com/user-attachments/assets/b7608f0a-1643-4cb9-8116-ddeaf3d8a03a
+
+
 
 ## Reflection
 **What are the limitations or biases in your system?**
