@@ -1,12 +1,6 @@
-import { type FormEvent, useState } from 'react';
-import RequestBuilder from '../components/RequestBuilder';
+import { useEffect, useMemo, useRef } from 'react';
 import ResultsDisplay from '../components/ResultsDisplay';
-import SongPlayer from '../components/SongPlayer';
-import type {
-    AIRecommendationResponse,
-    ManualPreferencesPayload,
-    Song,
-} from '../types';
+import type { AIRecommendationResponse, ManualPreferencesPayload, Song } from '../types';
 import type { Preferences } from '../utils/preferencesContext';
 
 type HomePageProps = {
@@ -24,8 +18,7 @@ type HomePageProps = {
     results: AIRecommendationResponse | null;
     selectedSong: Song | null;
     error: string;
-    onPreferenceChange: <K extends keyof Preferences>(field: K, value: Preferences[K]) => void;
-    onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+    onLoadRecommendations: () => Promise<void>;
     onSongSelect: (song: Song | null) => void;
 };
 
@@ -36,57 +29,37 @@ export default function HomePage({
     results,
     selectedSong,
     error,
-    onPreferenceChange,
-    onSubmit,
+    onLoadRecommendations,
     onSongSelect,
 }: HomePageProps) {
-    const [hasRequestedRecommendations, setHasRequestedRecommendations] = useState(false);
-    const showResults = hasRequestedRecommendations && !(error && !isLoading && !results);
+    const lastProfileRequestKeyRef = useRef<string>('');
+    const profileRequestKey = useMemo(
+        () =>
+            JSON.stringify({
+                savedTasteProfile,
+                k: preferences.k,
+            }),
+        [preferences.k, savedTasteProfile],
+    );
 
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        setHasRequestedRecommendations(true);
-        onSubmit(event);
-    }
+    useEffect(() => {
+        if (lastProfileRequestKeyRef.current === profileRequestKey) {
+            return;
+        }
+
+        lastProfileRequestKeyRef.current = profileRequestKey;
+        void onLoadRecommendations();
+    }, [onLoadRecommendations, profileRequestKey]);
 
     return (
-        <>
-            <div
-                className={`layout home-layout${
-                    showResults ? ' home-layout--results' : ''
-                }`}
-            >
-                <div
-                    className={`request-builder-wrap${
-                        showResults ? ' request-builder-wrap--hidden' : ''
-                    }`}
-                    aria-hidden={showResults}
-                >
-                    <RequestBuilder
-                        preferences={preferences}
-                        isLoading={isLoading}
-                        savedTasteProfile={savedTasteProfile}
-                        error={error}
-                        onPreferenceChange={onPreferenceChange}
-                        onSubmit={handleSubmit}
-                    />
-                </div>
-
-                <div
-                    className={`results-area home-results${
-                        showResults ? ' home-results--visible' : ''
-                    }`}
-                >
-                    {selectedSong ? <SongPlayer song={selectedSong} /> : null}
-                    <ResultsDisplay
-                        isLoading={isLoading}
-                        results={results}
-                        error={error}
-                        selectedSongId={selectedSong?.id ?? null}
-                        onSongSelect={onSongSelect}
-                        onReset={() => setHasRequestedRecommendations(false)}
-                    />
-                </div>
-            </div>
-        </>
+        <div className={`home-layout`}>
+            <ResultsDisplay
+                isLoading={isLoading}
+                results={results}
+                error={error}
+                selectedSongId={selectedSong?.id ?? null}
+                onSongSelect={onSongSelect}
+            />
+        </div>
     );
 }

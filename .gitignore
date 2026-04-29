@@ -18,3 +18,8 @@ venv/
 
 # Pytest cache
 .pytest_cache/
+
+# No more pushing AI assets, those in repo are enough
+lyrics/
+audio/
+covers/
