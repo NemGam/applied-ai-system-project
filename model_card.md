@@ -1,127 +1,79 @@
 # Model Card: VibeFlow 1.0
 
-## 1. Model Name
+## 1. Goal
+VibeFlow is a classroom-scale music recommendation system for a local catalog. It is built to be explainable and testable, not production-ready.
 
-VibeFlow 1.0
+It supports structured preferences and natural-language requests. The AI-assisted path can parse requests, retrieve songs from metadata and lyrics, rank them deterministically, optionally use Gemini for reranking and explanations, and in the agent flow ask for one clarification when the request is too vague.
 
-## 2. Goal
+## 2. Data Used
+The catalog contains 100 songs in `backend/data/songs.csv`.
 
-VibeFlow is a classroom-scale music recommendation system that suggests songs from a local catalog based on a user's stated preferences. It is designed to be explainable and testable rather than fully autonomous or production-ready.
+Each song includes music features and synthetic metadata such as `genre`, `mood`, `tempo_bpm`, `valence`, `danceability`, `acousticness`, `vocal_presence`, `instrumental_focus`, `listening_context`, and `replay_value`.
 
-The system supports both structured inputs and natural-language requests. In the AI-assisted path, it can parse a request, retrieve candidate songs from metadata and lyrics, rank them with deterministic scoring, and optionally use Gemini for reranking and explanations.
+The system also uses local lyric files in `backend/lyrics`.
 
-This project is for educational use only. It is not trained on real listening history and should not be treated like a commercial recommendation engine.
+All song names, lyrics, and associated attributes are synthetic and Gemini-generated for this project. The system does not use real listening history, collaborative filtering data, or live external music databases.
 
-## 3. Data Used
+## 3. System Summary
+1. The user submits manual preferences or a natural-language request.
+2. Gemini parses natural-language input when available, with heuristic fallback otherwise.
+3. The retriever finds candidates using metadata and lyrics.
+4. The deterministic recommender scores and ranks the candidates.
+5. The system can ask for one clarification in the agent-style endpoint when the request is low-signal.
+6. Gemini can optionally rerank top results and generate explanations.
+7. If Gemini fails or is disabled, the system falls back to deterministic ranking and heuristic explanations.
 
-The catalog currently contains 100 songs stored in `backend/data/songs.csv`.
+The AI endpoint also includes an out-of-scope guardrail for clearly non-music requests.
 
-Each song includes standard music features and richer hand-authored metadata such as:
+## 4. Observed Behavior and Biases
+The system performs best when the user gives several clear signals, such as genre, mood, context, or target energy.
 
-- `genre`
-- `mood`
-- `energy`
-- `tempo_bpm`
-- `valence`
-- `danceability`
-- `acousticness`
-- `popularity_100`
-- `release_decade`
-- `detailed_mood_tags`
-- `vocal_presence`
-- `instrumental_focus`
-- `listening_context`
-- `replay_value`
+Main limitations and biases:
+- Users with sparse inputs can still be under-scored.
+- The catalog is small and uneven across genres and moods.
+- Retrieval depends heavily on word overlap in metadata and lyrics.
+- The synthetic metadata and lyrics reflect project design choices, not real listener behavior.
 
-The system also uses local lyric files in `backend/lyrics` as an additional retrieval source for the AI path.
+## 5. Evaluation
+Evaluation was done through manual inspection and automated tests.
 
-Because the metadata and lyrics are local, curated, and synthetic, the system reflects the assumptions and labeling choices of the project author. It does not use real streaming behavior, collaborative filtering signals, or live external music databases.
-
-## 4. System Summary
-
-VibeFlow uses a hybrid design:
-
-1. A user submits either manual preferences or a natural-language request.
-2. Natural-language requests are parsed into structured recommendation preferences using Gemini when available, with a heuristic fallback if Gemini fails.
-3. The AI path retrieves candidate songs from local metadata and lyrics.
-4. A deterministic recommender scores songs using weighted categorical matches and numeric feature closeness.
-5. A diversity reranking step reduces repeated artists or genres near the top of the list.
-6. Gemini can optionally rerank top candidates and generate short explanations.
-7. If Gemini is unavailable or returns unusable output, the system falls back to deterministic ranking and heuristic explanations.
-
-The system also includes a simple out-of-scope guardrail for clearly non-music requests in the AI endpoint.
-
-## 5. Observed Behavior and Biases
-
-The system performs best when a user gives specific preference signals such as genre, mood, listening context, or a clear target energy level. Richer inputs usually produce more coherent and explainable results than vague or partial requests.
-
-The main scoring weakness is that users with partial preference inputs can still be under-scored compared with users who provide more complete preferences. This means users with only one or two strong signals may receive lower absolute scores even when those signals match well.
-
-Other important sources of bias include:
-
-- Hand-authored labels for mood, context, and replay value
-- Uneven catalog coverage across genres and moods
-- Retrieval behavior that depends on exact word overlap in metadata and lyrics
-- Synthetic song and lyric content that may simplify real musical nuance
-
-## 6. Evaluation
-
-I evaluated the system through both manual inspection and automated tests.
-
-Manual evaluation focused on whether the returned songs and explanations made sense for different kinds of music requests and preference combinations.
-
-I also compared how the system behaved for broad requests, narrow requests, and partial inputs. Broad requests tended to produce more variety, while narrow requests often surfaced a smaller repeated pocket of the catalog.
-
-Automated evaluation covered:
-
-- deterministic ranking behavior
-- retrieval over metadata and lyrics
+Automated tests cover:
+- deterministic ranking
+- metadata and lyric retrieval
 - Gemini fallback behavior
-- reranking validation
-- explanation fallback behavior
-- adversarial or dirty input normalization
-- out-of-scope request handling
+- reranking and explanation validation
+- taste-profile personalization
+- lyrics endpoint behavior
+- clarification flow
+- adversarial inputs
+- out-of-scope handling
 
-These tests improved confidence that the system behaves consistently even when AI features fail or return incomplete outputs.
-
-## 7. Intended Use and Non-Intended Use
-
+## 6. Intended Use
 Intended use:
-
 - classroom demonstration of recommendation concepts
-- showing a hybrid AI pipeline with retrieval, ranking, fallbacks, and explanations
-- experimenting with explainability and testing in a small AI system
+- small-scale AI pipeline experimentation
+- explainability and testing practice
 
-Non-intended use:
+Not intended for:
+- production recommendation
+- real personal listening histories
+- high-stakes decisions
+- general-purpose assistant use
 
-- production recommendation at scale
-- use with real personal listening histories
-- high-stakes decision making
-- use as a general-purpose assistant outside music recommendation
+## 7. Safety and Reliability Notes
+This system does not include full moderation, but it does include:
+- structured Gemini parsing targets
+- deterministic fallback when Gemini fails
+- candidate validation during reranking
+- heuristic explanation fallback
+- an out-of-scope music guardrail
 
-All song names, lyrics, and associated attributes in this project are synthetic and were generated by Google Gemini. Any resemblance to real people or works is coincidental.
-
-## 8. Safety and Reliability Notes
-
-This system does not include a full moderation layer. However, it does include several functional safeguards:
-
-- strict structured parsing targets for Gemini
-- deterministic local fallback when Gemini fails
-- candidate validation during LLM reranking
-- heuristic fallback explanations
-- a simple out-of-scope guardrail for clearly non-music requests
-
-These safeguards improve robustness, but they are not a substitute for full safety controls or production monitoring.
-
-## 9. Future Work
-
+## 8. Future Work
 - improve scoring for sparse preference inputs
-- expand catalog coverage across genres, decades, and contexts
-- use stronger retrieval methods than keyword overlap alone
-- learn feature weights from user feedback instead of hand-setting them
-- add better domain detection and richer user-facing error states
-- include real user behavior signals in a privacy-conscious way
+- expand the catalog
+- use stronger retrieval than keyword overlap alone
+- learn feature weights from user feedback
+- improve domain detection and user-facing errors
 
-## 10. Reflection
-
-This project reinforced that useful AI systems often come from combining simpler pieces rather than relying entirely on one model call. The most important lesson was that fallbacks, testing, and explainability matter just as much as model capability, especially when inputs are messy or the model fails. It also made clear how quickly design choices in labels, features, and scoring create bias, even in a small educational project.
+## 9. Reflection
+This project reinforced that useful AI systems often come from combining simpler pieces instead of relying on one model call. The most important lesson was that fallbacks, testing, and explainability matter as much as model capability.
