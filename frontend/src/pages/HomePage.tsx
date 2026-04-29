@@ -4,14 +4,6 @@ import type { AIRecommendationResponse, ManualPreferencesPayload, Song } from '.
 import type { Preferences } from '../utils/preferencesContext';
 
 type HomePageProps = {
-    hero?: {
-        to: string;
-        label: string;
-        eyebrow: string;
-        title: string;
-        description: string;
-        icon: string;
-    };
     preferences: Preferences;
     isLoading: boolean;
     savedTasteProfile: ManualPreferencesPayload;

@@ -1,13 +1,12 @@
 import type { FormEvent } from 'react';
 import ResultsDisplay from '../components/ResultsDisplay';
 import RequestBuilder from '../components/RequestBuilder';
-import type { AIRecommendationResponse, ManualPreferencesPayload, Song } from '../types';
+import type { AIRecommendationResponse, Song } from '../types';
 import type { Preferences } from '../utils/preferencesContext';
 
 type DiscoverPageProps = {
     preferences: Preferences;
     isLoading: boolean;
-    savedTasteProfile: ManualPreferencesPayload;
     results: AIRecommendationResponse | null;
     selectedSong: Song | null;
     error: string;
@@ -19,7 +18,6 @@ type DiscoverPageProps = {
 export default function DiscoverPage({
     preferences,
     isLoading,
-    savedTasteProfile,
     results,
     selectedSong,
     error,
@@ -32,7 +30,6 @@ export default function DiscoverPage({
             <RequestBuilder
                 preferences={preferences}
                 isLoading={isLoading}
-                savedTasteProfile={savedTasteProfile}
                 error={error}
                 onPreferenceChange={onPreferenceChange}
                 onSubmit={onSubmit}

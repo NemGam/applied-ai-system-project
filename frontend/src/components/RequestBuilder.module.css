@@ -13,12 +13,6 @@
     flex: 1;
 }
 
-.preferenceForm .inputs {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 220px;
-    gap: 22px;
-}
-
 .preferenceForm label {
     display: grid;
     gap: 8px;
@@ -26,7 +20,6 @@
 }
 
 .preferenceForm input,
-.preferenceForm select,
 .preferenceForm textarea {
     width: 100%;
     border: 1px solid rgba(247, 178, 103, 0.18);
@@ -34,8 +27,4 @@
     padding: 12px 14px;
     background: rgba(255, 255, 255, 0.04);
     color: inherit;
-}
-
-.preferenceForm option {
-    color: #12161f;
 }

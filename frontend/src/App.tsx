@@ -14,29 +14,24 @@ import DiscoverPage from './pages/DiscoverPage';
 import SongPlayer from './components/SongPlayer';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
+const HOME_RECOMMENDATION_CACHE_PREFIX = 'home-recommendations:';
 
 const APP_TABS = [
     {
         to: '/',
         label: 'Home',
-        eyebrow: 'Discover',
-        title: 'VibeFlow',
         description: 'Explore your recommendations.',
         icon: 'H',
     },
     {
         to: '/discover',
         label: 'Discover',
-        eyebrow: 'Taste profile',
-        title: 'Your Profile',
         description: 'Discover new songs that match your current vibe.',
         icon: 'D',
     },
     {
         to: '/profile',
         label: 'Profile',
-        eyebrow: 'Taste profile',
-        title: 'Your Profile',
         description: 'Edit your listening profile in VibeFlow.',
         icon: 'P',
     },
@@ -58,8 +53,41 @@ function parseNumber(value: string): number | undefined {
     return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function getRecommendationCacheKey(payload: AIRecommendationRequestPayload): string {
+    return `${HOME_RECOMMENDATION_CACHE_PREFIX}${JSON.stringify(payload)}`;
+}
+
+function readCachedRecommendations(cacheKey: string): AIRecommendationResponse | null {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    const cachedValue = window.sessionStorage.getItem(cacheKey);
+    if (!cachedValue) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(cachedValue) as AIRecommendationResponse;
+    } catch {
+        window.sessionStorage.removeItem(cacheKey);
+        return null;
+    }
+}
+
+function writeCachedRecommendations(
+    cacheKey: string,
+    data: AIRecommendationResponse,
+) {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.sessionStorage.setItem(cacheKey, JSON.stringify(data));
+}
+
 export default function App() {
-    const { preferences, updatePreference, resetPreferences } = usePreferencesContext();
+    const { preferences, updatePreference } = usePreferencesContext();
     const [homeResults, setHomeResults] = useState<AIRecommendationResponse | null>(null);
     const [discoverResults, setDiscoverResults] = useState<AIRecommendationResponse | null>(null);
     const [selectedSong, setSelectedSong] = useState<Song | null>(null);
@@ -95,41 +123,15 @@ export default function App() {
         [manualPreferences, preferences.k, preferences.useTasteProfile, preferences.userText],
     );
 
-    const profileHighlights = useMemo(
-        () => [
-            { label: 'Favorite genre', value: preferences.genre || 'Open to anything' },
-            { label: 'Current mood', value: preferences.mood || 'Not set' },
-            { label: 'Listening context', value: preferences.listeningContext || 'Not set' },
-            {
-                label: 'Mood tags',
-                value: splitCsv(preferences.preferredMoodTags).join(', ') || 'Not set',
-            },
-        ],
-        [
-            preferences.genre,
-            preferences.listeningContext,
-            preferences.mood,
-            preferences.preferredMoodTags,
-        ],
-    );
-
-    const profileMetrics = useMemo(
-        () => [
-            { label: 'Energy', value: preferences.energy || 'Not set' },
-            { label: 'Tempo BPM', value: preferences.tempoBpm || 'Not set' },
-            { label: 'Danceability', value: preferences.danceability || 'Not set' },
-            { label: 'Acousticness', value: preferences.acousticness || 'Not set' },
-            { label: 'Vocal presence', value: preferences.vocalPresence || 'Not set' },
-            { label: 'Valence', value: preferences.valence || 'Not set' },
-        ],
-        [
-            preferences.acousticness,
-            preferences.danceability,
-            preferences.energy,
-            preferences.tempoBpm,
-            preferences.valence,
-            preferences.vocalPresence,
-        ],
+    const homeRequestPayload = useMemo<AIRecommendationRequestPayload>(
+        () => ({
+            user_text: null,
+            manual_preferences: manualPreferences,
+            taste_profile: null,
+            k: parseNumber(preferences.k) ?? 5,
+            retrieval_k: 20,
+        }),
+        [manualPreferences, preferences.k],
     );
 
     async function fetchRecommendations(
@@ -170,10 +172,24 @@ export default function App() {
         options?: {
             autoSelectFirstSong?: boolean;
             preserveSelectedSong?: boolean;
+            cacheKey?: string;
         },
     ) {
         const autoSelectFirstSong = options?.autoSelectFirstSong ?? true;
         const preserveSelectedSong = options?.preserveSelectedSong ?? false;
+        const cacheKey = options?.cacheKey;
+        const cachedResults = cacheKey ? readCachedRecommendations(cacheKey) : null;
+
+        if (cachedResults) {
+            handlers.setError('');
+            handlers.setLoading(false);
+            handlers.setResults(cachedResults);
+            if (autoSelectFirstSong) {
+                setSelectedSong(cachedResults.results[0]?.song ?? null);
+            }
+            return;
+        }
+
         handlers.setLoading(true);
         handlers.setError('');
         handlers.setResults(null);
@@ -183,6 +199,9 @@ export default function App() {
 
         try {
             const data = await fetchRecommendations(payload);
+            if (cacheKey) {
+                writeCachedRecommendations(cacheKey, data);
+            }
             handlers.setResults(data);
             if (autoSelectFirstSong) {
                 setSelectedSong(data.results[0]?.song ?? null);
@@ -212,13 +231,7 @@ export default function App() {
 
     async function handleHomeRecommendations() {
         await runRecommendations(
-            {
-                user_text: null,
-                manual_preferences: manualPreferences,
-                taste_profile: null,
-                k: parseNumber(preferences.k) ?? 5,
-                retrieval_k: 20,
-            },
+            homeRequestPayload,
             {
                 setLoading: setIsHomeLoading,
                 setError: setHomeError,
@@ -227,6 +240,7 @@ export default function App() {
             {
                 autoSelectFirstSong: false,
                 preserveSelectedSong: true,
+                cacheKey: getRecommendationCacheKey(homeRequestPayload),
             },
         );
     }
@@ -258,7 +272,6 @@ export default function App() {
                             <DiscoverPage
                                 preferences={preferences}
                                 isLoading={isDiscoverLoading}
-                                savedTasteProfile={manualPreferences}
                                 results={discoverResults}
                                 selectedSong={selectedSong}
                                 error={discoverError}
@@ -273,10 +286,7 @@ export default function App() {
                         element={
                             <ProfilePage
                                 preferences={preferences}
-                                profileHighlights={profileHighlights}
-                                profileMetrics={profileMetrics}
                                 onPreferenceChange={updatePreference}
-                                onReset={resetPreferences}
                             />
                         }
                     />

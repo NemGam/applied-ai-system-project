@@ -80,15 +80,6 @@ export default function ProfilePreferencesPanel({
                         onChange={(value) => onPreferenceChange('preferredMoodTags', value)}
                         placeholder="focused, nocturnal, warm"
                     />
-
-                    <PreferenceInput
-                        label="Extra notes"
-                        value={preferences.manualNotes}
-                        onChange={(value) => onPreferenceChange('manualNotes', value)}
-                        placeholder="soft vocals, warmer tone, late-night feel"
-                        multiline
-                        rows={4}
-                    />
                 </div>
 
                 <div className="numeric-fields-grid">

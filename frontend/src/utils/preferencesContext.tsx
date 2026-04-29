@@ -10,7 +10,6 @@ import {
 export type Preferences = {
     userText: string;
     useTasteProfile: boolean;
-    manualNotes: string;
     genre: string;
     mood: string;
     listeningContext: string;
@@ -27,7 +26,6 @@ export type Preferences = {
 export const initialPreferences: Preferences = {
     userText: 'I want chill music for late-night studying with soft vocals',
     useTasteProfile: true,
-    manualNotes: 'keep the vocals soft and the vibe late-night',
     genre: '',
     mood: 'chill',
     listeningContext: 'study',

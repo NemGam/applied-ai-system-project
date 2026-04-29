@@ -1,13 +1,11 @@
 import type { FormEvent } from 'react';
 import type { Preferences } from '../utils/preferencesContext';
-import type { ManualPreferencesPayload } from '../types';
 import PreferenceInput from './PreferenceInput';
 import styles from './RequestBuilder.module.css';
 
 type RequestBuilderProps = {
     preferences: Preferences;
     isLoading: boolean;
-    savedTasteProfile: ManualPreferencesPayload;
     error: string;
     onPreferenceChange: <K extends keyof Preferences>(field: K, value: Preferences[K]) => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
