@@ -10,6 +10,8 @@ import type {
 } from './types';
 import { usePreferencesContext } from './utils/preferencesContext';
 import Sidebar from './components/Sidebar';
+import DiscoverPage from './pages/DiscoverPage';
+import SongPlayer from './components/SongPlayer';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -19,15 +21,23 @@ const APP_TABS = [
         label: 'Home',
         eyebrow: 'Discover',
         title: 'VibeFlow',
-        description: 'Build prompts, run recommendations, and explore ranked results.',
+        description: 'Explore your recommendations.',
         icon: 'H',
+    },
+    {
+        to: '/discover',
+        label: 'Discover',
+        eyebrow: 'Taste profile',
+        title: 'Your Profile',
+        description: 'Discover new songs that match your current vibe.',
+        icon: 'D',
     },
     {
         to: '/profile',
         label: 'Profile',
         eyebrow: 'Taste profile',
         title: 'Your Profile',
-        description: 'Edit the listening signals and defaults saved in VibeFlow.',
+        description: 'Edit your listening profile in VibeFlow.',
         icon: 'P',
     },
 ] as const;
@@ -50,10 +60,13 @@ function parseNumber(value: string): number | undefined {
 
 export default function App() {
     const { preferences, updatePreference, resetPreferences } = usePreferencesContext();
-    const [results, setResults] = useState<AIRecommendationResponse | null>(null);
+    const [homeResults, setHomeResults] = useState<AIRecommendationResponse | null>(null);
+    const [discoverResults, setDiscoverResults] = useState<AIRecommendationResponse | null>(null);
     const [selectedSong, setSelectedSong] = useState<Song | null>(null);
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [homeError, setHomeError] = useState('');
+    const [discoverError, setDiscoverError] = useState('');
+    const [isHomeLoading, setIsHomeLoading] = useState(false);
+    const [isDiscoverLoading, setIsDiscoverLoading] = useState(false);
 
     const manualPreferences = useMemo<ManualPreferencesPayload>(
         () => ({
@@ -119,45 +132,103 @@ export default function App() {
         ],
     );
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        setIsLoading(true);
-        setError('');
-        setResults(null);
-        setSelectedSong(null);
+    async function fetchRecommendations(
+        payload: AIRecommendationRequestPayload,
+    ): Promise<AIRecommendationResponse> {
+        const response = await fetch(`${API_BASE_URL}/recommendations/ai`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorBody = (await response.json().catch(() => null)) as
+                | { detail?: string }
+                | null;
+            throw new Error(errorBody?.detail || `Request failed with status ${response.status}`);
+        }
+
+        const data: AIRecommendationResponse = await response.json();
+        if (data.guardrail?.triggered) {
+            throw new Error(
+                data.guardrail.message || 'That request is outside the supported music scope.',
+            );
+        }
+
+        return data;
+    }
+
+    async function runRecommendations(
+        payload: AIRecommendationRequestPayload,
+        handlers: {
+            setLoading: (value: boolean) => void;
+            setError: (value: string) => void;
+            setResults: (value: AIRecommendationResponse | null) => void;
+        },
+        options?: {
+            autoSelectFirstSong?: boolean;
+            preserveSelectedSong?: boolean;
+        },
+    ) {
+        const autoSelectFirstSong = options?.autoSelectFirstSong ?? true;
+        const preserveSelectedSong = options?.preserveSelectedSong ?? false;
+        handlers.setLoading(true);
+        handlers.setError('');
+        handlers.setResults(null);
+        if (!preserveSelectedSong) {
+            setSelectedSong(null);
+        }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/recommendations/ai`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestPreview),
-            });
-
-            if (!response.ok) {
-                const errorBody = (await response.json().catch(() => null)) as
-                    | { detail?: string }
-                    | null;
-                throw new Error(errorBody?.detail || `Request failed with status ${response.status}`);
+            const data = await fetchRecommendations(payload);
+            handlers.setResults(data);
+            if (autoSelectFirstSong) {
+                setSelectedSong(data.results[0]?.song ?? null);
             }
-
-            const data: AIRecommendationResponse = await response.json();
-            if (data.guardrail?.triggered) {
-                setError(data.guardrail.message || 'That request is outside the supported music scope.');
-                return;
-            }
-            setResults(data);
-            setSelectedSong(data.results[0]?.song ?? null);
         } catch (submissionError) {
             const message =
                 submissionError instanceof Error
                     ? submissionError.message
                     : 'Unexpected request error';
-            setError(message);
+            handlers.setError(message);
         } finally {
-            setIsLoading(false);
+            handlers.setLoading(false);
         }
+    }
+
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        await runRecommendations(
+            requestPreview,
+            {
+                setLoading: setIsDiscoverLoading,
+                setError: setDiscoverError,
+                setResults: setDiscoverResults,
+            },
+        );
+    }
+
+    async function handleHomeRecommendations() {
+        await runRecommendations(
+            {
+                user_text: null,
+                manual_preferences: manualPreferences,
+                taste_profile: null,
+                k: parseNumber(preferences.k) ?? 5,
+                retrieval_k: 20,
+            },
+            {
+                setLoading: setIsHomeLoading,
+                setError: setHomeError,
+                setResults: setHomeResults,
+            },
+            {
+                autoSelectFirstSong: false,
+                preserveSelectedSong: true,
+            },
+        );
     }
 
     return (
@@ -170,13 +241,27 @@ export default function App() {
                         path="/"
                         element={
                             <HomePage
-                                hero={APP_TABS[0]}
                                 preferences={preferences}
-                                isLoading={isLoading}
+                                isLoading={isHomeLoading}
                                 savedTasteProfile={manualPreferences}
-                                results={results}
+                                results={homeResults}
                                 selectedSong={selectedSong}
-                                error={error}
+                                error={homeError}
+                                onLoadRecommendations={handleHomeRecommendations}
+                                onSongSelect={setSelectedSong}
+                            />
+                        }
+                    />
+                    <Route
+                        path="/discover"
+                        element={
+                            <DiscoverPage
+                                preferences={preferences}
+                                isLoading={isDiscoverLoading}
+                                savedTasteProfile={manualPreferences}
+                                results={discoverResults}
+                                selectedSong={selectedSong}
+                                error={discoverError}
                                 onPreferenceChange={updatePreference}
                                 onSubmit={handleSubmit}
                                 onSongSelect={setSelectedSong}
@@ -187,7 +272,6 @@ export default function App() {
                         path="/profile"
                         element={
                             <ProfilePage
-                                hero={APP_TABS[1]}
                                 preferences={preferences}
                                 profileHighlights={profileHighlights}
                                 profileMetrics={profileMetrics}
@@ -199,6 +283,8 @@ export default function App() {
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </section>
+
+            <SongPlayer song={selectedSong} />
         </main>
     );
 }
