@@ -137,3 +137,50 @@ def test_recommend_songs_respects_requested_k():
     results = recommend_songs(user_prefs, songs, k=3)
 
     assert len(results) == 3
+
+
+def test_recommend_songs_prioritizes_genre_and_mood_over_numeric_closeness():
+    songs = [
+        {
+            "id": 1,
+            "title": "Genre Mood Match",
+            "artist": "Artist A",
+            "genre": "lofi",
+            "mood": "focused",
+            "energy": 0.55,
+            "tempo_bpm": 96.0,
+            "valence": 0.45,
+            "danceability": 0.48,
+            "acousticness": 0.72,
+        },
+        {
+            "id": 2,
+            "title": "Numeric Match Only",
+            "artist": "Artist B",
+            "genre": "rock",
+            "mood": "energetic",
+            "energy": 0.31,
+            "tempo_bpm": 80.0,
+            "valence": 0.50,
+            "danceability": 0.44,
+            "acousticness": 0.78,
+        },
+    ]
+    user_prefs = {
+        "favorite_genres": ["lofi"],
+        "favorite_moods": ["focused"],
+        "target_energy": 0.30,
+        "target_tempo_bpm": 80.0,
+        "target_acousticness": 0.78,
+        "diversity_settings": {
+            "artist_penalty": 0.0,
+            "genre_penalty": 0.0,
+        },
+    }
+
+    results = recommend_songs(user_prefs, songs, k=2)
+
+    assert [song["title"] for song, _, _ in results] == [
+        "Genre Mood Match",
+        "Numeric Match Only",
+    ]

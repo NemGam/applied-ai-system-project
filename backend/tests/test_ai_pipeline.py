@@ -5,6 +5,8 @@ from backend.src.ai_pipeline import (
     _cached_gemini_response,
     _extract_llm_song_explanations,
     _extract_llm_reranked_song_ids,
+    choose_agent_clarification_question,
+    evaluate_agent_confidence,
     explain_ranked_songs,
     gemini_explanations_enabled,
     gemini_rerank_top_n,
@@ -14,6 +16,8 @@ from backend.src.ai_pipeline import (
     load_lyrics_index,
     manual_preferences_to_recommender,
     merge_recommender_preferences,
+    merge_clarification_preferences,
+    parse_preferences_with_gemini,
     personalize_recommender_preferences,
     rerank_recommendations_with_gemini,
     retrieve_lyric_candidates,
@@ -36,6 +40,33 @@ def test_heuristic_parser_extracts_study_request_preferences():
     assert parsed["target_acousticness"] >= 0.7
     assert 0.2 <= parsed["target_vocal_presence"] <= 0.45
     assert "nocturnal" in parsed["preferred_mood_tags"]
+
+
+def test_gemini_parser_can_emit_no_lyrics_flag(monkeypatch):
+    monkeypatch.setattr(
+        "backend.src.ai_pipeline._post_to_gemini",
+        lambda prompt, temperature=0.1: {
+            "favorite_genres": ["ambient"],
+            "favorite_moods": [],
+            "favorite_contexts": [],
+            "preferred_mood_tags": [],
+            "target_energy": None,
+            "target_valence": None,
+            "target_danceability": None,
+            "target_acousticness": None,
+            "target_tempo_bpm": None,
+            "target_vocal_presence": 0.02,
+            "target_instrumental_focus": 0.97,
+            "exclude_lyrical_tracks": True,
+        },
+    )
+
+    parsed, provider = parse_preferences_with_gemini("Give me ambient songs with no lyrics")
+
+    assert provider == "gemini"
+    assert parsed["exclude_lyrical_tracks"] is True
+    assert parsed["target_vocal_presence"] <= 0.05
+    assert parsed["target_instrumental_focus"] >= 0.95
 
 
 def test_out_of_scope_detector_flags_clear_non_music_request():
@@ -98,6 +129,41 @@ def test_merge_preferences_keeps_manual_values_authoritative_and_fills_gaps():
     assert merged["target_energy"] == 0.3
     assert merged["target_acousticness"] == 0.84
     assert merged["target_vocal_presence"] == 0.28
+
+
+def test_merge_clarification_preferences_adds_new_signal_without_losing_existing_fields():
+    base_prefs = heuristic_parse_preferences("rock music")
+
+    merged = merge_clarification_preferences(base_prefs, "mostly instrumental for studying")
+
+    assert "rock" in merged["favorite_genres"]
+    assert "study" in merged["favorite_contexts"]
+    assert merged["target_instrumental_focus"] >= 0.82
+
+
+def test_agent_confidence_reports_low_signal_requests_and_suggests_clarification():
+    user_prefs = heuristic_parse_preferences("rock music")
+    songs = load_songs("backend/data/songs.csv")
+    lyrics_by_song_id = load_lyrics_index("backend/lyrics")
+    retrieved = retrieve_candidate_songs(
+        user_request="rock music",
+        user_prefs=user_prefs,
+        songs=songs,
+        lyrics_by_song_id=lyrics_by_song_id,
+        limit=5,
+    )
+    ranked = [
+        (candidate["song"], candidate["retrieval_score"], "retrieval proxy")
+        for candidate in retrieved[:3]
+    ]
+
+    report = evaluate_agent_confidence(user_prefs, retrieved, ranked)
+    clarification = choose_agent_clarification_question(user_prefs)
+
+    assert report["confidence"] == "low"
+    assert report["signal_count"] == 1
+    assert clarification is not None
+    assert clarification["slot"] == "listening_context"
 
 
 def test_personalization_keeps_prompt_preferences_primary():
@@ -213,6 +279,41 @@ def test_merged_retrieval_can_report_both_sources_for_same_song():
     assert midnight_coding["retrieval_breakdown"]["metadata"] > 0
     assert midnight_coding["retrieval_breakdown"]["lyrics"] > 0
     assert midnight_coding["lyric_snippets"]
+
+
+def test_retrieval_excludes_songs_with_lyrics_when_gemini_sets_no_lyrics_flag(monkeypatch):
+    songs = load_songs("backend/data/songs.csv")
+    lyrics_by_song_id = load_lyrics_index("backend/lyrics")
+    monkeypatch.setattr(
+        "backend.src.ai_pipeline._post_to_gemini",
+        lambda prompt, temperature=0.1: {
+            "favorite_genres": ["ambient"],
+            "favorite_moods": ["focused"],
+            "favorite_contexts": ["study"],
+            "preferred_mood_tags": [],
+            "target_energy": None,
+            "target_valence": None,
+            "target_danceability": None,
+            "target_acousticness": None,
+            "target_tempo_bpm": None,
+            "target_vocal_presence": 0.02,
+            "target_instrumental_focus": 0.97,
+            "exclude_lyrical_tracks": True,
+        },
+    )
+    user_prefs, provider = parse_preferences_with_gemini("ambient study music with no lyrics")
+
+    assert provider == "gemini"
+    retrieved = retrieve_candidate_songs(
+        user_request="ambient study music with no lyrics",
+        user_prefs=user_prefs,
+        songs=songs,
+        lyrics_by_song_id=lyrics_by_song_id,
+        limit=10,
+    )
+
+    assert retrieved
+    assert all(int(item["song"]["id"]) not in lyrics_by_song_id for item in retrieved)
 
 
 def test_gemini_explanations_are_disabled_by_default(monkeypatch):
