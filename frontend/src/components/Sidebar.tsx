@@ -19,6 +19,7 @@ export default function Sidebar({ tabs }: SidebarProps) {
                 <p>VibeFlow</p>
                 <span>Music recommender</span>
             </div>
+            <hr></hr>
 
             <nav className={styles.nav} aria-label="Primary">
                 {tabs.map((tab) => (

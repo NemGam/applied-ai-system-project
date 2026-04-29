@@ -10,9 +10,18 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.songCard.selected {
+    background:
+        linear-gradient(180deg, rgba(247, 178, 103, 0.19) 0%, rgba(255, 255, 255, 0.13) 100%),
+        rgba(255, 255, 255, 0.1);
+}
+
 .songCardSelectable {
     cursor: pointer;
-    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
 }
 
 .songCardSelectable:hover,
@@ -49,6 +58,12 @@
     gap: 16px;
 }
 
+.headerMeta {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
 .songHeader h3,
 .artist,
 .explanation {
@@ -77,61 +92,65 @@
     font-size: 0.82rem;
 }
 
-.songFacts,
-.sourceSummary,
-.reasonList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.songFacts span,
-.reasonPill {
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 0.84rem;
-}
-
-.songFacts span {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #ece6db;
-}
-
 .explanation {
     color: #f4efe4;
 }
 
-.reasonPill {
-    background: rgba(247, 178, 103, 0.1);
-    border: 1px solid rgba(247, 178, 103, 0.16);
-    color: #f7d3a9;
+.metaTooltipGroup {
+    position: relative;
 }
 
-.sourceSummary span,
-.sourcePill,
-.sourceReasonPill {
-    padding: 6px 10px;
+.metaButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
     border-radius: 999px;
+    border: 1px solid rgba(247, 178, 103, 0.26);
+    background: rgba(247, 178, 103, 0.08);
+    color: #f7d3a9;
+    cursor: help;
+    transition:
+        border-color 160ms ease,
+        background 160ms ease,
+        transform 160ms ease;
+}
+
+.metaButton:hover,
+.metaButton:focus-visible {
+    border-color: rgba(247, 178, 103, 0.5);
+    background: rgba(247, 178, 103, 0.16);
+    transform: translateY(-1px);
+}
+
+.metaTooltipPortal {
+    position: fixed;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(247, 178, 103, 0.24);
+    background: rgba(8, 12, 18, 0.96);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+    z-index: 999;
+    pointer-events: none;
+}
+
+.metaTooltipTitle {
+    margin: 0 0 10px;
     font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #f7b267;
 }
 
-.sourceSummary span {
-    background: rgba(168, 208, 230, 0.08);
-    border: 1px solid rgba(168, 208, 230, 0.14);
-    color: #d6edf8;
-}
-
-.sourcePill {
-    background: rgba(128, 222, 178, 0.10);
-    border: 1px solid rgba(128, 222, 178, 0.18);
-    color: #c9f0dc;
-}
-
-.sourceReasonPill {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #ded8ce;
+.metaTooltipList {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 8px;
+    color: #ece6db;
+    font-size: 0.88rem;
+    line-height: 1.45;
 }
 
 @media (max-width: 720px) {
@@ -146,6 +165,11 @@
 
     .songHeader {
         flex-direction: column;
+    }
+
+    .headerMeta {
+        align-items: center;
+        justify-content: space-between;
     }
 
     .scoreBlock {

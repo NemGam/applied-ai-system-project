@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './SongPlayer.module.css';
 import type { Song } from '../types';
+import { Volume1Icon, Volume2Icon, VolumeOffIcon } from 'lucide-react';
+
+const END_FADE_SECONDS = 4;
 
 type SongPlayerProps = {
-    song: Song;
+    song: Song | null;
 };
 
 export default function SongPlayer({ song }: SongPlayerProps) {
@@ -11,23 +14,48 @@ export default function SongPlayer({ song }: SongPlayerProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [volume, setVolume] = useState(0.7);
     const [lyrics, setLyrics] = useState<string | null>(null);
     const [isLyricsLoading, setIsLyricsLoading] = useState(false);
     const [lyricsError, setLyricsError] = useState('');
 
     useEffect(() => {
+        if (!song) {
+            setIsPlaying(false);
+            setCurrentTime(0);
+            setDuration(0);
+            return;
+        }
+
         setIsPlaying(false);
         setCurrentTime(0);
         setDuration(0);
-    }, [song.id, song.audio_url]);
+    }, [song]);
 
     useEffect(() => {
+        if (!audioRef.current) {
+            return;
+        }
+
+        syncAudioVolume(audioRef.current, volume);
+    }, [duration, volume, song]);
+
+    useEffect(() => {
+        if (!song) {
+            setLyrics(null);
+            setLyricsError('');
+            setIsLyricsLoading(false);
+            return;
+        }
+
         if (!song.has_lyrics || !song.lyrics_url) {
             setLyrics(null);
             setLyricsError('');
             setIsLyricsLoading(false);
             return;
         }
+
+        const lyricsUrl: string = song.lyrics_url;
 
         const abortController = new AbortController();
 
@@ -37,7 +65,7 @@ export default function SongPlayer({ song }: SongPlayerProps) {
             setLyricsError('');
 
             try {
-                const response = await fetch(song.lyrics_url as string, {
+                const response = await fetch(lyricsUrl, {
                     signal: abortController.signal,
                 });
 
@@ -75,9 +103,13 @@ export default function SongPlayer({ song }: SongPlayerProps) {
         return () => {
             abortController.abort();
         };
-    }, [song.has_lyrics, song.id, song.lyrics_url]);
+    }, [song]);
 
     async function togglePlayback() {
+        if (!song) {
+            return;
+        }
+
         if (!song.audio_url) {
             return;
         }
@@ -132,8 +164,56 @@ export default function SongPlayer({ song }: SongPlayerProps) {
         return `${mins}:${secs}`;
     }
 
+    function formatVolume(value: number): string {
+        return `${Math.round(value * 100)}%`;
+    }
+
+    function getEffectiveVolume(
+        baseVolume: number,
+        playbackCurrentTime: number,
+        playbackDuration: number,
+    ): number {
+        if (
+            !Number.isFinite(playbackCurrentTime) ||
+            !Number.isFinite(playbackDuration) ||
+            playbackDuration <= END_FADE_SECONDS
+        ) {
+            return baseVolume;
+        }
+
+        const remainingSeconds = playbackDuration - playbackCurrentTime;
+        if (remainingSeconds >= END_FADE_SECONDS) {
+            return baseVolume;
+        }
+
+        return Math.max(0, baseVolume * (remainingSeconds / END_FADE_SECONDS));
+    }
+
+    function syncAudioVolume(
+        audioElement: HTMLAudioElement,
+        baseVolume: number,
+        playbackCurrentTime = audioElement.currentTime,
+        playbackDuration = audioElement.duration,
+    ) {
+        audioElement.volume = getEffectiveVolume(baseVolume, playbackCurrentTime, playbackDuration);
+    }
+
+    if (!song) {
+        return (
+            <aside className={styles.songPlayerPanel}>
+                <div className={`${styles.songCover} ${styles.coverPlaceholder}`}>Pick a song</div>
+                <div>
+                    <h3 className={styles.title}>Player queue</h3>
+                    <p className={styles.artist}>
+                        Select a recommendation to load its preview, artwork, and lyrics here.
+                    </p>
+                </div>
+            </aside>
+        );
+    }
+
     return (
-        <section className={`panel ${styles.songPlayerPanel}`}>
+        <aside className={styles.songPlayerPanel}>
             {song.cover_url ? (
                 <img
                     className={styles.songCover}
@@ -189,6 +269,31 @@ export default function SongPlayer({ song }: SongPlayerProps) {
                 </button>
             </div>
 
+            <label className={styles.volumeControl}>
+                <div className={styles.volumeRow}>
+                    <span className={styles.volumeLabel}>
+                        {volume == 0 ? (
+                            <VolumeOffIcon />
+                        ) : volume < 0.35 ? (
+                            <Volume1Icon />
+                        ) : (
+                            <Volume2Icon />
+                        )}
+                    </span>
+                    <input
+                        type="range"
+                        className={styles.volumeSlider}
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={volume}
+                        onChange={(event) => setVolume(Number(event.target.value))}
+                        disabled={!song.audio_url}
+                    />
+                    <span className={styles.volumeValue}>{formatVolume(volume)}</span>
+                </div>
+            </label>
+
             {song.has_lyrics ? (
                 <section className={styles.lyricsSection} aria-live="polite">
                     <h4 className={styles.lyricsHeading}>Lyrics</h4>
@@ -209,14 +314,29 @@ export default function SongPlayer({ song }: SongPlayerProps) {
                     onEnded={() => setIsPlaying(false)}
                     onPause={() => setIsPlaying(false)}
                     onPlay={() => setIsPlaying(true)}
-                    onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+                    onTimeUpdate={(event) => {
+                        const playbackCurrentTime = event.currentTarget.currentTime;
+                        setCurrentTime(playbackCurrentTime);
+                        syncAudioVolume(
+                            event.currentTarget,
+                            volume,
+                            playbackCurrentTime,
+                            event.currentTarget.duration,
+                        );
+                    }}
                     onLoadedMetadata={(event) => {
                         const loadedDuration = event.currentTarget.duration;
                         setDuration(Number.isFinite(loadedDuration) ? loadedDuration : 0);
+                        syncAudioVolume(
+                            event.currentTarget,
+                            volume,
+                            event.currentTarget.currentTime,
+                            loadedDuration,
+                        );
                     }}
                     hidden
                 />
             ) : null}
-        </section>
+        </aside>
     );
 }

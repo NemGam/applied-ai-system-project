@@ -118,6 +118,14 @@
     letter-spacing: 0.06em;
 }
 
+.resultsPanel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
 .resultsGrid {
     display: flex;
     flex-direction: column;
@@ -126,15 +134,7 @@
     min-height: 0;
     overflow-y: auto;
     padding-right: 6px;
-}
-
-.listSection {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    padding: 10px 10px 0 0;
 }
 
 .sectionHeader {
@@ -162,4 +162,14 @@
 .sectionText {
     margin: 0;
     color: #d8d2c7;
+}
+
+@media (max-width: 1180px) {
+    .resultsPanel {
+        overflow: visible;
+    }
+
+    .resultsGrid {
+        overflow-y: visible;
+    }
 }
