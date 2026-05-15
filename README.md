@@ -26,10 +26,10 @@ The backend accepts either manual preferences or natural-language requests. It c
 ## Example Interactions
 Note: grammar errors are made on purpose to test the system
 
-"I want sm chill music for studying"
+Profile based matching
 ![alt text](assets/ex1.png)
 
-"Maybe some rock music?"
+"I want chill late-ngfht study music"
 ![alt text](assets/ex2.png)
 
 Guardrail example
